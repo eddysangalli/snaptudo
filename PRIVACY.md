@@ -11,6 +11,7 @@ O SnapTudo não opera um servidor próprio de coleta de dados. A extensão proce
 - `activeTab` e `scripting`: detectar mídia e oferecer controles na aba ativa.
 - `webRequest` e acesso a sites: identificar URLs de mídia e playlists acessíveis no navegador.
 - `alarms`: verificar receitas e versões periodicamente.
+- `nativeMessaging`: comunicar, somente quando instalado, com o sidecar local do SnapTudo que executa yt-dlp.
 
 O acesso amplo a sites é necessário para o sniffer universal. Isso também torna importante instalar somente pacotes obtidos da Release oficial e conferir o repositório antes de cada atualização.
 
@@ -19,6 +20,7 @@ O acesso amplo a sites é necessário para o sniffer universal. Isso também tor
 - GitHub: consulta pública de `recipes/recipes.json` e da última Release.
 - Site atual: requisições necessárias para localizar ou baixar a mídia escolhida.
 - YouTube: quando o usuário escolhe uma opção assistida, uma nova aba pode ser aberta em `cobalt.tools` ou `9xbuddy.com`. Esses serviços têm políticas próprias e não são operados pelo SnapTudo.
+- Sidecar yt-dlp: o aplicativo local acessa o YouTube apenas depois de um clique explícito do usuário. Ele aceita somente URLs HTTPS do YouTube, recusa playlists e salva em `Downloads\SnapTudo`. Logs locais ficam na pasta do sidecar.
 
 ## Dados locais
 

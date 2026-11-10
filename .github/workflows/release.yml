@@ -16,12 +16,18 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.x"
       - name: Validar tag e extensão
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           ./scripts/verify.ps1
           ./scripts/build-release.ps1 -ExpectedVersion $version
+          ./sidecar/build-sidecar.ps1 -Version $version
       - name: Criar Release estável
         shell: pwsh
         env:

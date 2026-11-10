@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "recipesVersion": "2026.11.09.1",
-  "updatedAt": "2026-11-09T23:30:00-03:00",
+  "recipesVersion": "2026.11.09.2",
+  "updatedAt": "2026-11-09T23:55:00-03:00",
   "minExtensionVersion": "1.2.0",
   "notes": "Receitas declarativas (somente dados). Edite este arquivo no GitHub quando uma plataforma mudar; as extensões instaladas puxam a versão nova automaticamente em até 6h (ou na hora, pelo botão 'Verificar agora').",
 
@@ -43,6 +43,8 @@
   },
 
   "youtube": {
+    "sidecarHost": "com.eddysangalli.snaptudo",
+    "sidecarReleaseUrl": "https://github.com/eddysangalli/snaptudo/releases/latest",
     "primaryUrlTemplate": "https://cobalt.tools/#{url}",
     "alternativeUrlTemplate": "https://9xbuddy.com/process?url={urlEncoded}"
   }

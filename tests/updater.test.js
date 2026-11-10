@@ -46,7 +46,7 @@ async function fetchMock(url) {
     return {
       ok: true,
       status: 200,
-      json: async () => ({ ...bundledRecipes, recipesVersion: "2026.11.09.2" })
+      json: async () => ({ ...bundledRecipes, recipesVersion: "2026.11.09.3" })
     };
   }
   if (url.includes("api.github.com/repos/eddysangalli/snaptudo/releases/latest")) {
@@ -54,12 +54,12 @@ async function fetchMock(url) {
       ok: true,
       status: 200,
       json: async () => ({
-        tag_name: "v1.3.0",
-        html_url: "https://github.com/eddysangalli/snaptudo/releases/tag/v1.3.0",
-        zipball_url: "https://api.github.com/repos/eddysangalli/snaptudo/zipball/v1.3.0",
+        tag_name: "v1.2.1",
+        html_url: "https://github.com/eddysangalli/snaptudo/releases/tag/v1.2.1",
+        zipball_url: "https://api.github.com/repos/eddysangalli/snaptudo/zipball/v1.2.1",
         assets: [{
-          name: "snaptudo-v1.3.0.zip",
-          browser_download_url: "https://github.com/eddysangalli/snaptudo/releases/download/v1.3.0/snaptudo-v1.3.0.zip",
+          name: "snaptudo-v1.2.1.zip",
+          browser_download_url: "https://github.com/eddysangalli/snaptudo/releases/download/v1.2.1/snaptudo-v1.2.1.zip",
           digest: `sha256:${"a".repeat(64)}`
         }]
       })
@@ -86,12 +86,12 @@ vm.runInContext(updaterSource, context, { filename: "background/updater.js" });
 
   const status = await context.self.SnapTudoUpdater.runUpdateCycle();
   assert.equal(status.currentVersion, "1.2.0");
-  assert.equal(status.latestVersion, "1.3.0");
+  assert.equal(status.latestVersion, "1.2.1");
   assert.equal(status.updateAvailable, true);
-  assert.equal(status.recipesVersion, "2026.11.09.2");
-  assert.match(status.downloadUrl, /snaptudo-v1\.3\.0\.zip$/);
+  assert.equal(status.recipesVersion, "2026.11.09.3");
+  assert.match(status.downloadUrl, /snaptudo-v1\.2\.1\.zip$/);
   assert.equal(status.sha256, "a".repeat(64));
-  assert.equal(stored.snaptudoUpdateStatus.latestVersion, "1.3.0");
+  assert.equal(stored.snaptudoUpdateStatus.latestVersion, "1.2.1");
 
   console.log("updater.test.js: OK");
 })().catch(error => {

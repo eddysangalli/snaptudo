@@ -6,6 +6,8 @@
 // Canal de atualizações (receitas remotas + checagem de versão no GitHub)
 importScripts("updater.js");
 
+const SNAPTUDO_YTDLP_HOST = "com.eddysangalli.snaptudo";
+
 // Armazena mídias capturadas via rede por tabId
 const tabMediaStreams = new Map();
 
@@ -160,6 +162,17 @@ function sanitizeFilename(name) {
   return clean;
 }
 
+function isAllowedYouTubeUrl(rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== "https:") return false;
+    const host = url.hostname.toLowerCase();
+    return host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com");
+  } catch (e) {
+    return false;
+  }
+}
+
 // Listener de mensagens
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { action } = message;
@@ -180,6 +193,52 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = message.tabId || sender?.tab?.id;
     const streams = tabMediaStreams.get(tabId) || [];
     sendResponse({ streams });
+    return true;
+  }
+
+  if (action === "getYtDlpStatus") {
+    chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, { action: "ping" }, (response) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        sendResponse({
+          success: true,
+          available: false,
+          error: "Sidecar yt-dlp não instalado. Baixe o pacote da Release do SnapTudo."
+        });
+        return;
+      }
+      sendResponse({
+        success: true,
+        available: response?.success === true,
+        ...response
+      });
+    });
+    return true;
+  }
+
+  if (action === "startYtDlpDownload") {
+    const mode = message.mode === "audio" ? "audio" : "video";
+    if (!isAllowedYouTubeUrl(message.url)) {
+      sendResponse({ success: false, error: "URL do YouTube inválida ou não permitida." });
+      return false;
+    }
+
+    chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, {
+      action: "startDownload",
+      mode,
+      url: message.url
+    }, (response) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        sendResponse({
+          success: false,
+          sidecarMissing: true,
+          error: "Sidecar yt-dlp não instalado. Use o pacote da Release ou o fallback Cobalt."
+        });
+        return;
+      }
+      sendResponse(response || { success: false, error: "O sidecar não respondeu." });
+    });
     return true;
   }
 
@@ -227,7 +286,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // Fetch com permissão do background para contornar restrições de CORS
   if (action === "fetchBlobData") {
-    fetch(message.url)
+    fetch(message.url, { credentials: "include", cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buffer = await res.arrayBuffer();

@@ -382,6 +382,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn360 = document.getElementById("btn-yt-360p");
     const btnAudio = document.getElementById("btn-yt-audio");
     const btnRec = document.getElementById("btn-yt-rec");
+    const sidecarStatus = document.getElementById("yt-sidecar-status");
     const ytCapturedBox = document.getElementById("yt-captured-box");
     const ytNetworkList = document.getElementById("yt-network-list");
 
@@ -404,34 +405,57 @@ document.addEventListener("DOMContentLoaded", async () => {
       channelElem.textContent = ytData.channel ? `Canal: ${ytData.channel}` : "";
     });
 
-    // 1. Download via Cobalt (HD MP4 - Rápido, sem anúncios e com link preenchido)
-    btn720.addEventListener("click", () => {
-      navigator.clipboard.writeText(fullYtUrl).catch(() => {});
-      chrome.tabs.create({ url: `https://cobalt.tools/#${fullYtUrl}` });
-      window.close();
+    chrome.runtime.sendMessage({ action: "getYtDlpStatus" }, (status) => {
+      if (chrome.runtime.lastError || !status?.available) {
+        sidecarStatus.textContent = "⚠️ Sidecar yt-dlp não instalado. Use o pacote da Release ou o Cobalt.";
+        sidecarStatus.style.color = "#fbbf24";
+        return;
+      }
+      const ffmpeg = status.ffmpegFound ? "FFmpeg ativo: vídeo + áudio até 1080p" : "sem FFmpeg: formato combinado até 720p";
+      sidecarStatus.textContent = `✓ yt-dlp ${status.ytDlpVersion || "ativo"} · ${ffmpeg}`;
+      sidecarStatus.style.color = "#86efac";
     });
 
-    // 2. Download de Áudio MP3 via Cobalt
-    btnAudio.addEventListener("click", () => {
-      navigator.clipboard.writeText(fullYtUrl).catch(() => {});
-      chrome.tabs.create({ url: `https://cobalt.tools/#${fullYtUrl}` });
-      window.close();
-    });
+    function startYtDlpDownload(mode, button) {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = mode === "audio" ? "🎵 Iniciando áudio..." : "📥 Iniciando vídeo...";
+      chrome.runtime.sendMessage({ action: "startYtDlpDownload", mode, url: fullYtUrl }, (response) => {
+        button.disabled = false;
+        button.textContent = originalText;
+        if (chrome.runtime.lastError || !response?.success) {
+          sidecarStatus.textContent = `⚠️ ${response?.error || "Sidecar yt-dlp indisponível."}`;
+          sidecarStatus.style.color = "#fbbf24";
+          if (response?.sidecarMissing) {
+            chrome.tabs.create({ url: "https://github.com/eddysangalli/snaptudo/releases/latest" });
+          }
+          return;
+        }
+        sidecarStatus.textContent = `✓ Download iniciado pelo yt-dlp em ${response.downloadDir}`;
+        sidecarStatus.style.color = "#86efac";
+        footerStatus.textContent = "yt-dlp em execução";
+      });
+    }
 
-    // 3. Download Alternativo via 9xBuddy
+    // 1. Download local pelo sidecar yt-dlp
+    btn720.addEventListener("click", () => startYtDlpDownload("video", btn720));
+    btnAudio.addEventListener("click", () => startYtDlpDownload("audio", btnAudio));
+
+    // 2. Alternativa web pelo Cobalt
     btn360.addEventListener("click", () => {
-      chrome.tabs.create({ url: `https://9xbuddy.com/process?url=${encodeURIComponent(fullYtUrl)}` });
+      navigator.clipboard.writeText(fullYtUrl).catch(() => {});
+      chrome.tabs.create({ url: `https://cobalt.tools/#${fullYtUrl}` });
       window.close();
     });
 
-    // 4. Gravar Player ao Vivo
+    // 3. Gravar Player ao Vivo
     btnRec.addEventListener("click", () => {
       chrome.tabs.sendMessage(activeTab.id, { action: "startYouTubeLiveRecord" }, () => {
         window.close();
       });
     });
 
-    // 5. Status de fluxos do player
+    // 4. Status de fluxos do player
     chrome.runtime.sendMessage({ action: "getNetworkStreams", tabId: activeTab.id }, (resp) => {
       if (resp?.streams && resp.streams.length > 0) {
         const videoStreams = resp.streams.filter(s => s.url.includes("googlevideo.com/videoplayback"));

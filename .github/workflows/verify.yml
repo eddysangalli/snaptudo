@@ -16,6 +16,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.x"
       - name: Validar extensão e canal de atualização
         shell: pwsh
         run: ./scripts/verify.ps1

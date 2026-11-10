@@ -158,27 +158,27 @@
       <div class="snaptudo-menu-header">
         <span class="snaptudo-menu-title">🌶️ SnapTudo: Opções de Download</span>
       </div>
-      <button class="snaptudo-menu-item" id="opt-yt-cobalt">
+      <button class="snaptudo-menu-item" id="opt-yt-sidecar">
         <span class="icon">⚡</span>
         <div class="text">
-          <strong>Baixar Vídeo MP4 (Cobalt HD)</strong>
-          <small>Preenchimento automático direto sem anúncios</small>
+          <strong>Baixar Vídeo MP4 (yt-dlp)</strong>
+          <small>Motor local, até 1080p com FFmpeg</small>
         </div>
         <span class="badge">HD</span>
       </button>
       <button class="snaptudo-menu-item" id="opt-yt-mp3">
         <span class="icon">🎵</span>
         <div class="text">
-          <strong>Baixar Áudio (MP3 / M4A)</strong>
-          <small>Extrair faixa de áudio em alta fidelidade</small>
+          <strong>Baixar Áudio M4A (yt-dlp)</strong>
+          <small>Melhor faixa de áudio disponível</small>
         </div>
         <span class="badge">MP3</span>
       </button>
-      <button class="snaptudo-menu-item" id="opt-yt-9xbuddy">
+      <button class="snaptudo-menu-item" id="opt-yt-cobalt">
         <span class="icon">🎬</span>
         <div class="text">
-          <strong>Baixar Alternativo (9xBuddy)</strong>
-          <small>Serviço auxiliar para resoluções variadas</small>
+          <strong>Alternativa web (Cobalt)</strong>
+          <small>Fallback quando o sidecar não estiver instalado</small>
         </div>
         <span class="badge">MP4</span>
       </button>
@@ -196,27 +196,33 @@
     activeDropdown = menu;
 
     const fullYtUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const currentUrl = encodeURIComponent(window.location.href);
+    function startSidecarDownload(mode) {
+      chrome.runtime.sendMessage({ action: "startYtDlpDownload", mode, url: fullYtUrl }, (response) => {
+        if (chrome.runtime.lastError || !response?.success) {
+          alert(response?.error || "Sidecar yt-dlp não instalado. Use a alternativa Cobalt.");
+          return;
+        }
+        alert(`Download iniciado em:\n${response.downloadDir}`);
+      });
+    }
 
-    // Conectar eventos das opções com passagem do link no hash do Cobalt
-    menu.querySelector("#opt-yt-cobalt").onclick = (e) => {
+    menu.querySelector("#opt-yt-sidecar").onclick = (e) => {
       e.stopPropagation();
       closeActiveDropdown();
-      navigator.clipboard.writeText(fullYtUrl).catch(() => {});
-      window.open(`https://cobalt.tools/#${fullYtUrl}`, "_blank");
+      startSidecarDownload("video");
     };
 
     menu.querySelector("#opt-yt-mp3").onclick = (e) => {
       e.stopPropagation();
       closeActiveDropdown();
-      navigator.clipboard.writeText(fullYtUrl).catch(() => {});
-      window.open(`https://cobalt.tools/#${fullYtUrl}`, "_blank");
+      startSidecarDownload("audio");
     };
 
-    menu.querySelector("#opt-yt-9xbuddy").onclick = (e) => {
+    menu.querySelector("#opt-yt-cobalt").onclick = (e) => {
       e.stopPropagation();
       closeActiveDropdown();
-      window.open(`https://9xbuddy.com/process?url=${currentUrl}`, "_blank");
+      navigator.clipboard.writeText(fullYtUrl).catch(() => {});
+      window.open(`https://cobalt.tools/#${fullYtUrl}`, "_blank");
     };
 
     menu.querySelector("#opt-yt-rec").onclick = (e) => {

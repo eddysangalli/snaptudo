@@ -11,7 +11,7 @@ Extensão Manifest V3 para Chrome, Edge, Brave e outros navegadores Chromium. El
 - HLS/M3U8: captura de playlists e download de segmentos compatíveis, inclusive AES-128 quando a chave está acessível.
 - Sniffer universal: lista imagens, vídeos e fluxos encontrados na aba.
 - Gravação do player: usa `captureStream()`/`MediaRecorder` quando o navegador e o site permitem.
-- YouTube: abre um fluxo assistido em serviços externos configurados na receita. O Chrome e o próprio YouTube limitam o acesso direto aos streams; não há promessa de download direto ou de disponibilidade permanente.
+- YouTube: usa o sidecar opcional com yt-dlp para baixar vídeo e áudio localmente. Cobalt e gravação do player permanecem como alternativas. O Chrome e o próprio YouTube mudam o player com frequência, portanto não há promessa de disponibilidade permanente.
 
 ## Instalação
 
@@ -22,6 +22,14 @@ Extensão Manifest V3 para Chrome, Edge, Brave e outros navegadores Chromium. El
 5. Clique em **Carregar sem compactação** e selecione a pasta extraída.
 
 Não carregue diretamente uma pasta temporária ou o ZIP.
+
+### Motor opcional yt-dlp
+
+1. Na mesma Release, baixe `snaptudo-sidecar-vX.Y.Z-win-x64.zip` e seu `.sha256`.
+2. Confira o SHA-256, extraia o pacote e execute `install-sidecar.ps1`.
+3. Recarregue a extensão.
+
+O sidecar é registrado somente para o ID fixo `epjkbhcahfaojangofedoginhmcjbfol`. Ele aceita apenas links HTTPS do YouTube e sempre desativa playlists. Com FFmpeg instalado, combina vídeo e áudio em MP4 até 1080p; sem FFmpeg, tenta um formato combinado de até 720p. Veja [sidecar/README.md](sidecar/README.md).
 
 ## Canal de atualizações
 
@@ -38,7 +46,7 @@ Uma extensão carregada sem compactação não tem permissão para reescrever a 
 2. Atualize e teste as receitas, se necessário.
 3. Execute `./scripts/verify.ps1`.
 4. Crie e envie uma tag igual à versão: `git tag v1.2.1` e `git push origin v1.2.1`.
-5. O workflow gera `snaptudo-v1.2.1.zip`, publica o SHA-256 e cria a Release.
+5. O workflow gera `snaptudo-v1.2.1.zip` e `snaptudo-sidecar-v1.2.1-win-x64.zip`, publica os SHA-256 e cria a Release.
 
 O endpoint público consultado pela extensão é a API de `releases/latest` deste repositório. Releases marcadas como rascunho ou pré-lançamento não entram no canal estável.
 
@@ -52,6 +60,7 @@ lib/          bibliotecas locais redistribuíveis
 popup/        interface da extensão
 recipes/      configuração declarativa atualizável
 scripts/      validação e empacotamento
+sidecar/      host Native Messaging em Go e integração yt-dlp
 tests/        testes automatizados do canal de atualização
 ```
 

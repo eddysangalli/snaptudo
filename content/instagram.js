@@ -218,7 +218,7 @@
   async function fetchMediaBlob(url) {
     if (!url) return null;
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(url, { credentials: "include", cache: "no-store" });
       if (resp.ok) return await resp.blob();
     } catch (e) {}
 
@@ -235,6 +235,49 @@
         resolve(null);
       }
     });
+  }
+
+  function saveBlobLocally(blob, filename) {
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+  }
+
+  function findActiveStoryMedia() {
+    const isVisible = (element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return rect.width >= 200 && rect.height >= 200 && style.display !== "none" && style.visibility !== "hidden";
+    };
+
+    const visibleVideos = [...document.querySelectorAll("section video, main video, div[role='dialog'] video, video")]
+      .filter(video => isVisible(video) && (video.currentSrc || video.src))
+      .sort((a, b) => {
+        const ar = a.getBoundingClientRect();
+        const br = b.getBoundingClientRect();
+        return (br.width * br.height) - (ar.width * ar.height);
+      });
+    if (visibleVideos[0]) {
+      return { type: "video", element: visibleVideos[0], url: visibleVideos[0].currentSrc || visibleVideos[0].src };
+    }
+
+    const visibleImages = [...document.querySelectorAll("section img, main img, div[role='dialog'] img")]
+      .filter(img => isVisible(img) && (img.currentSrc || img.src) && (img.naturalWidth || 0) >= 300)
+      .sort((a, b) => {
+        const ar = a.getBoundingClientRect();
+        const br = b.getBoundingClientRect();
+        return (br.width * br.height) - (ar.width * ar.height);
+      });
+    if (visibleImages[0]) {
+      return { type: "image", element: visibleImages[0], url: visibleImages[0].currentSrc || visibleImages[0].src };
+    }
+    return null;
   }
 
   // Configuração dinâmica ("receita"): valores padrão embutidos, sobrescritos pela receita
@@ -1236,18 +1279,35 @@
     dlStoryBtn.className = "snaptudo-btn";
     dlStoryBtn.title = "SnapTudo: Baixar este Story";
     dlStoryBtn.innerHTML = ICONS.download;
-    dlStoryBtn.onclick = () => {
-      const video = document.querySelector("section video, video");
-      const img = document.querySelector("section img[srcset], section img");
+    dlStoryBtn.onclick = async () => {
+      const media = findActiveStoryMedia();
       const username = getUsername() || "Story";
-      if (video && video.currentSrc) {
-        downloadDirect(video.currentSrc, `Story_${username}_${Date.now()}.mp4`);
-        showToast("⬇️ Baixando vídeo do Story...");
-      } else if (img && (img.currentSrc || img.src)) {
-        downloadDirect(img.currentSrc || img.src, `Story_${username}_${Date.now()}.jpg`);
-        showToast("⬇️ Baixando foto do Story...");
-      } else {
+      if (!media) {
         showToast("⚠️ Nenhuma mídia de story encontrada no momento.");
+        return;
+      }
+
+      dlStoryBtn.disabled = true;
+      showToast("⬇️ Preparando Story com a sessão ativa...");
+      try {
+        let mediaUrl = media.url;
+        if (media.type === "video" && mediaUrl.startsWith("blob:")) {
+          const captured = await new Promise(resolve => {
+            chrome.runtime.sendMessage({ action: "getLatestVideoForTab" }, response => resolve(response));
+          });
+          if (captured?.success && captured.url) mediaUrl = captured.url;
+        }
+
+        const blob = await fetchMediaBlob(mediaUrl);
+        if (!blob || blob.size === 0) throw new Error("A CDN não entregou a mídia.");
+        const extension = media.type === "video" ? "mp4" : (blob.type.includes("png") ? "png" : "jpg");
+        saveBlobLocally(blob, `Story_${username}_${Date.now()}.${extension}`);
+        showToast(`✅ Story preparado (${Math.max(1, Math.round(blob.size / 1024))} KB).`);
+      } catch (error) {
+        console.warn("[SnapTudo] Falha ao baixar Story autenticado:", error);
+        showToast("⚠️ Não foi possível buscar este Story. Avance e volte para renovar a URL.");
+      } finally {
+        dlStoryBtn.disabled = false;
       }
     };
 

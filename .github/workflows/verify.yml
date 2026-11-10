@@ -19,6 +19,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: "1.27.x"
+          cache: false
       - name: Validar extensão e canal de atualização
         shell: pwsh
         run: ./scripts/verify.ps1

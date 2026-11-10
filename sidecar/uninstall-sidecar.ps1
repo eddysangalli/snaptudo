@@ -1,25 +1,53 @@
 param(
-  [string]$InstallDirectory = "$env:LOCALAPPDATA\SnapTudo\Sidecar",
+  [string]$InstallDirectory = "$env:ProgramData\SnapTudo\Sidecar",
   [switch]$KeepLogs
 )
 
 $ErrorActionPreference = "Stop"
+$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+  $elevatedArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", ('"' + $PSCommandPath + '"'),
+    "-InstallDirectory", ('"' + $InstallDirectory + '"')
+  )
+  if ($KeepLogs) { $elevatedArgs += "-KeepLogs" }
+  $elevated = Start-Process -FilePath "powershell.exe" -Verb RunAs -ArgumentList $elevatedArgs -PassThru -Wait
+  exit $elevated.ExitCode
+}
+
 $hostName = "com.eddysangalli.snaptudo"
-$registryKeys = @(
-  "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName",
-  "HKCU:\Software\Microsoft\Edge\NativeMessagingHosts\$hostName",
-  "HKCU:\Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\$hostName"
+$registryPaths = @(
+  "Software\Google\Chrome\NativeMessagingHosts\$hostName",
+  "Software\Microsoft\Edge\NativeMessagingHosts\$hostName",
+  "Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\$hostName"
 )
-foreach ($key in $registryKeys) {
-  if (Test-Path -LiteralPath $key) {
-    Remove-Item -LiteralPath $key -Recurse -Force
+
+$registryRoots = @("HKCU", "HKLM")
+
+foreach ($root in $registryRoots) {
+  foreach ($path in $registryPaths) {
+    foreach ($view in @("32", "64")) {
+      & reg.exe delete "$root\$path" /f "/reg:$view" 2>$null | Out-Null
+    }
   }
 }
 
 $installRoot = [IO.Path]::GetFullPath($InstallDirectory)
-$expectedRoot = [IO.Path]::GetFullPath("$env:LOCALAPPDATA\SnapTudo").TrimEnd('\') + '\'
-if (-not $installRoot.StartsWith($expectedRoot, [StringComparison]::OrdinalIgnoreCase)) {
-  throw "Recusado remover pasta fora de $expectedRoot"
+$allowedRoots = @(
+  [IO.Path]::GetFullPath("$env:ProgramData\SnapTudo").TrimEnd('\') + '\',
+  [IO.Path]::GetFullPath("$env:LOCALAPPDATA\SnapTudo").TrimEnd('\') + '\'
+)
+$isAllowed = $false
+foreach ($root in $allowedRoots) {
+  if ($installRoot.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+    $isAllowed = $true
+    break
+  }
+}
+if (-not $isAllowed) {
+  throw "Recusado remover pasta fora das raízes do SnapTudo."
 }
 
 if (Test-Path -LiteralPath $installRoot) {

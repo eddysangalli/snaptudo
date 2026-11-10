@@ -1,15 +1,29 @@
 param(
-  [string]$InstallDirectory = "$env:LOCALAPPDATA\SnapTudo\Sidecar",
-  [string]$DownloadDirectory = "$env:USERPROFILE\Downloads\SnapTudo"
+  [string]$InstallDirectory = "$env:ProgramData\SnapTudo\Sidecar",
+  [string]$DownloadDirectory = "$([Environment]::GetFolderPath('UserProfile'))\Downloads\SnapTudo"
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+  $elevatedArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", ('"' + $PSCommandPath + '"'),
+    "-InstallDirectory", ('"' + $InstallDirectory + '"'),
+    "-DownloadDirectory", ('"' + $DownloadDirectory + '"')
+  )
+  $elevated = Start-Process -FilePath "powershell.exe" -Verb RunAs -ArgumentList $elevatedArgs -PassThru -Wait
+  exit $elevated.ExitCode
+}
+
 $sourceRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $installRoot = [IO.Path]::GetFullPath($InstallDirectory)
 $hostName = "com.eddysangalli.snaptudo"
 $extensionId = "epjkbhcahfaojangofedoginhmcjbfol"
+$utf8NoBom = [Text.UTF8Encoding]::new($false)
 
 $required = @("snaptudo-sidecar.exe", "yt-dlp.exe")
 foreach ($name in $required) {
@@ -31,7 +45,11 @@ $config = [ordered]@{
   nodePath = if ($node) { $node.Source } else { "" }
   ffmpegPath = if ($ffmpeg) { $ffmpeg.Source } else { "" }
 }
-$config | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $installRoot "config.json") -Encoding utf8
+[IO.File]::WriteAllText(
+  (Join-Path $installRoot "config.json"),
+  ($config | ConvertTo-Json),
+  $utf8NoBom
+)
 
 $nativeManifest = [ordered]@{
   name = $hostName
@@ -41,16 +59,29 @@ $nativeManifest = [ordered]@{
   allowed_origins = @("chrome-extension://$extensionId/")
 }
 $manifestPath = Join-Path $installRoot "$hostName.json"
-$nativeManifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $manifestPath -Encoding utf8
-
-$registryKeys = @(
-  "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName",
-  "HKCU:\Software\Microsoft\Edge\NativeMessagingHosts\$hostName",
-  "HKCU:\Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\$hostName"
+[IO.File]::WriteAllText(
+  $manifestPath,
+  ($nativeManifest | ConvertTo-Json -Depth 4),
+  $utf8NoBom
 )
-foreach ($key in $registryKeys) {
-  New-Item -Path $key -Force | Out-Null
-  Set-Item -Path $key -Value $manifestPath
+
+$registryPaths = @(
+  "Software\Google\Chrome\NativeMessagingHosts\$hostName",
+  "Software\Microsoft\Edge\NativeMessagingHosts\$hostName",
+  "Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\$hostName"
+)
+
+$registryRoots = @("HKCU", "HKLM")
+
+foreach ($root in $registryRoots) {
+  foreach ($path in $registryPaths) {
+    foreach ($view in @("32", "64")) {
+      & reg.exe add "$root\$path" /ve /t REG_SZ /d $manifestPath /f "/reg:$view" | Out-Null
+      if ($LASTEXITCODE -ne 0) {
+        throw "Falha ao registrar $root\$path na visão $view-bit."
+      }
+    }
+  }
 }
 
 $version = & (Join-Path $installRoot "yt-dlp.exe") --version
@@ -59,4 +90,5 @@ Write-Output "Downloads em: $DownloadDirectory"
 Write-Output "yt-dlp: $version"
 Write-Output "Node detectado: $([bool]$node)"
 Write-Output "FFmpeg detectado: $([bool]$ffmpeg)"
+Write-Output "Registro: $($registryRoots -join ', ') (32 e 64 bits)"
 Write-Output "Recarregue o SnapTudo em chrome://extensions para ativar o sidecar."

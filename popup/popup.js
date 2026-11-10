@@ -406,8 +406,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     chrome.runtime.sendMessage({ action: "getYtDlpStatus" }, (status) => {
-      if (chrome.runtime.lastError || !status?.available) {
-        sidecarStatus.textContent = "⚠️ Sidecar yt-dlp não instalado. Use o pacote da Release ou o Cobalt.";
+      const runtimeError = chrome.runtime.lastError;
+      if (runtimeError || !status?.available) {
+        const detail = runtimeError?.message || status?.error || "Sidecar yt-dlp indisponível.";
+        sidecarStatus.textContent = `⚠️ ${detail}`;
         sidecarStatus.style.color = "#fbbf24";
         return;
       }

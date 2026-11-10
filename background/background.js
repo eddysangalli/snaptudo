@@ -203,7 +203,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({
           success: true,
           available: false,
-          error: "Sidecar yt-dlp não instalado. Baixe o pacote da Release do SnapTudo."
+          error: `Falha do Chrome ao abrir o sidecar: ${error.message || "erro desconhecido"}`
         });
         return;
       }
@@ -233,7 +233,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({
           success: false,
           sidecarMissing: true,
-          error: "Sidecar yt-dlp não instalado. Use o pacote da Release ou o fallback Cobalt."
+          error: `Falha do Chrome ao abrir o sidecar: ${error.message || "erro desconhecido"}`
         });
         return;
       }

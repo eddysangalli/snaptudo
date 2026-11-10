@@ -1,0 +1,192 @@
+/* SnapTudo - Estilos para o YouTube 🌶️ */
+
+/* Botão na barra de ações do YouTube */
+.snaptudo-yt-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 36px !important;
+  padding: 0 16px !important;
+  background: rgba(255, 59, 92, 0.16) !important;
+  border: 1px solid rgba(255, 59, 92, 0.45) !important;
+  color: #ff3b5c !important;
+  border-radius: 18px !important;
+  font-family: "Roboto", "Segoe UI", Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  margin-left: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.snaptudo-yt-btn:hover {
+  background: rgba(255, 59, 92, 0.28) !important;
+  border-color: #ff3b5c !important;
+  transform: translateY(-1px) !important;
+}
+
+.snaptudo-yt-btn span {
+  font-size: 10px !important;
+  opacity: 0.8 !important;
+}
+
+/* Menu Flutuante Global (Anexado a document.body para NUNCA ser cortado por overflow:hidden) */
+.snaptudo-yt-floating-menu {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  background: rgba(18, 19, 26, 0.96) !important;
+  backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 59, 92, 0.35) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  padding: 8px !important;
+  width: 290px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  animation: snaptudo-pop 0.18s cubic-bezier(0.18, 0.89, 0.32, 1.28) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+@keyframes snaptudo-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.snaptudo-menu-header {
+  padding: 6px 10px 4px 10px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  margin-bottom: 4px !important;
+}
+
+.snaptudo-menu-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #8c8e9c !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.snaptudo-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  color: #f1f2f6 !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  width: 100% !important;
+  transition: background 0.15s ease !important;
+}
+
+.snaptudo-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.snaptudo-menu-item.accent:hover {
+  background: rgba(255, 59, 92, 0.16) !important;
+}
+
+.snaptudo-menu-item .icon {
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+.snaptudo-menu-item .text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+.snaptudo-menu-item .text strong {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+}
+
+.snaptudo-menu-item .text small {
+  font-size: 10px !important;
+  color: #8c8e9c !important;
+}
+
+.snaptudo-menu-item .badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #ff3b5c !important;
+  background: rgba(255, 59, 92, 0.15) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Badge de Gravação do Player */
+.snaptudo-recording-badge {
+  position: absolute !important;
+  top: 20px !important;
+  left: 20px !important;
+  z-index: 999999 !important;
+  background: rgba(14, 15, 20, 0.92) !important;
+  border: 1px solid #ff3b5c !important;
+  color: #ffffff !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-family: sans-serif !important;
+  font-size: 13px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.snaptudo-rec-dot {
+  width: 10px !important;
+  height: 10px !important;
+  background-color: #ff3b5c !important;
+  border-radius: 50% !important;
+  animation: snaptudo-blink 1s ease infinite !important;
+}
+
+@keyframes snaptudo-blink {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+}
+
+.snaptudo-rec-stop-btn {
+  background: #ff3b5c !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 4px 12px !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease !important;
+}
+
+.snaptudo-rec-stop-btn:hover {
+  transform: scale(1.05) !important;
+}

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapTudo</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <img src="../icons/icon-32.png" alt="SnapTudo Logo" class="brand-icon">
+      <div class="brand-text">
+        <h1 class="brand-title">SnapTudo <span class="badge-accent">PRO</span></h1>
+        <p class="brand-subtitle">Baixador de Vídeos, M3U8, Insta & YouTube</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-content">
+    <!-- MODO INSTAGRAM -->
+    <section id="section-instagram" class="view-section hidden">
+      <!-- Seletor de Modo Instagram (Post do Feed vs Perfil) -->
+      <div class="insta-tab-bar" id="insta-mode-selector">
+        <button id="tab-insta-post" class="insta-tab-btn active">Post Atual</button>
+        <button id="tab-insta-profile" class="insta-tab-btn">Baixar Perfil</button>
+      </div>
+
+      <!-- 1. MODO POST DO FEED / POST INDIVIDUAL -->
+      <div id="insta-view-post">
+        <div class="status-card insta-card">
+          <div class="status-header">
+            <span class="status-indicator active"></span>
+            <span class="status-label" id="insta-feed-status">Post em Visualização</span>
+          </div>
+          <div id="insta-post-details" class="post-details">
+            <p class="post-user" id="insta-username">Carregando post...</p>
+            <p class="post-caption" id="insta-caption"></p>
+          </div>
+        </div>
+
+        <div class="actions-grid">
+          <button id="btn-insta-download-single" class="btn btn-primary">
+            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Baixar Mídia Atual (HD)
+          </button>
+
+          <button id="btn-insta-download-zip" class="btn btn-accent">
+            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Baixar Carrossel + Legenda (.ZIP)
+          </button>
+
+          <button id="btn-insta-copy-caption" class="btn btn-secondary">
+            <svg class="btn-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copiar Legenda Completa
+          </button>
+        </div>
+
+        <div class="tip-card">
+          <span class="tip-icon">💡</span>
+          <span class="tip-text">Dica: Os botões <strong>[ ↗ ]</strong>, <strong>[ ⤓ ]</strong> e <strong>[ 💾 ZIP ]</strong> já estão na barra de cada post no feed!</span>
+        </div>
+      </div>
+
+      <!-- 2. MODO PERFIL COMPLETO (COM FILTROS) -->
+      <div id="insta-view-profile" class="hidden">
+        <div class="status-card profile-card">
+          <div class="profile-header">
+            <img id="profile-avatar" src="../icons/icon-48.png" alt="Avatar" class="profile-avatar">
+            <div class="profile-info">
+              <h2 id="profile-username" class="profile-username">@usuario</h2>
+              <span id="profile-post-count" class="profile-badge">0 posts detectados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros de Download do Perfil -->
+        <div class="filter-box">
+          <label class="filter-label">O que você deseja baixar?</label>
+          <div class="filter-chips" id="filter-type-chips">
+            <button class="chip active" data-type="all">Ambos (Fotos e Vídeos)</button>
+            <button class="chip" data-type="photos">Só Fotos</button>
+            <button class="chip" data-type="videos">Só Vídeos</button>
+          </div>
+        </div>
+
+        <div class="filter-box">
+          <label class="filter-label">Quantidade de publicações:</label>
+          <div class="filter-chips" id="filter-limit-chips">
+            <button class="chip" data-limit="12">Últimos 12</button>
+            <button class="chip" data-limit="24">Últimos 24</button>
+            <button class="chip active" data-limit="all">Todos Carregados</button>
+          </div>
+        </div>
+
+        <!-- Progresso de Download do Perfil -->
+        <div id="profile-progress-box" class="hls-progress-box hidden">
+          <div class="hls-progress-title">Baixando Mídias do Perfil...</div>
+          <div class="hls-bar-track">
+            <div id="profile-bar-fill" class="hls-bar-fill"></div>
+          </div>
+          <div class="hls-progress-meta">
+            <span id="profile-progress-text">Iniciando coleta...</span>
+            <span id="profile-progress-pct">0%</span>
+          </div>
+        </div>
+
+        <button id="btn-download-profile-zip" class="btn btn-accent btn-large">
+          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span id="profile-btn-text">📦 Baixar Perfil Completo (.ZIP)</span>
+        </button>
+
+        <p class="profile-hint">Role a página de perfil para carregar mais publicações antes de baixar.</p>
+      </div>
+    </section>
+
+    <!-- MODO YOUTUBE -->
+    <section id="section-youtube" class="view-section hidden">
+      <div class="status-card yt-card">
+        <div class="status-header">
+          <span class="status-indicator active"></span>
+          <span class="status-label">YouTube Detectado</span>
+        </div>
+        <div class="post-details">
+          <p class="post-user" id="yt-title">Carregando vídeo...</p>
+          <p class="post-caption" id="yt-channel"></p>
+        </div>
+      </div>
+
+      <div class="actions-grid" id="yt-streams-container">
+        <button id="btn-yt-720p" class="btn btn-accent">
+          <svg class="btn-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          ⚡ Baixar Vídeo MP4 (Cobalt HD)
+        </button>
+        <button id="btn-yt-audio" class="btn btn-secondary">
+          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+          🎵 Baixar Áudio MP3 (Cobalt)
+        </button>
+        <button id="btn-yt-360p" class="btn btn-primary">
+          <svg class="btn-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          🎬 Baixar Alternativo (9xBuddy)
+        </button>
+        <button id="btn-yt-rec" class="btn btn-primary" style="border-color: rgba(255, 59, 92, 0.4);">
+          🔴 Gravar Player ao Vivo (REC)
+        </button>
+      </div>
+
+      <!-- Fluxos de Vídeo Capturados da Rede no YouTube -->
+      <div id="yt-captured-box" class="hidden" style="margin-top: 14px;">
+        <p style="font-size: 11px; color: #a1a1aa; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Fluxos Diretos Capturados</p>
+        <div id="yt-network-list" class="media-list"></div>
+      </div>
+    </section>
+
+    <!-- MODO UNIVERSAL (OUTROS SITES) -->
+    <section id="section-universal" class="view-section">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="tab-videos">Vídeos (<span id="count-videos">0</span>)</button>
+        <button class="tab-btn" data-tab="tab-network">HLS / Fluxos (<span id="count-network">0</span>)</button>
+        <button class="tab-btn" data-tab="tab-images">Imagens (<span id="count-images">0</span>)</button>
+      </div>
+
+      <!-- Tab Vídeos -->
+      <div id="tab-videos" class="tab-pane active">
+        <div class="tab-toolbar">
+          <button id="btn-universal-record" class="btn btn-sm btn-primary">🔴 Gravar Player ao Vivo</button>
+        </div>
+        <div id="videos-list" class="media-list">
+          <div class="empty-state">Nenhum vídeo HTML5 detectado nesta página.</div>
+        </div>
+      </div>
+
+      <!-- Tab Fluxos & HLS (M3U8) -->
+      <div id="tab-network" class="tab-pane">
+        <!-- Progresso HLS -->
+        <div id="hls-progress-box" class="hls-progress-box hidden">
+          <div class="hls-progress-title">Baixando Fluxo HLS (M3U8)...</div>
+          <div class="hls-bar-track">
+            <div id="hls-bar-fill" class="hls-bar-fill"></div>
+          </div>
+          <div class="hls-progress-meta">
+            <span id="hls-progress-text">Iniciando download...</span>
+            <span id="hls-progress-pct">0%</span>
+          </div>
+        </div>
+
+        <div id="network-list" class="media-list">
+          <div class="empty-state">Nenhum fluxo de vídeo ou áudio capturado na rede ainda.</div>
+        </div>
+      </div>
+
+      <!-- Tab Imagens -->
+      <div id="tab-images" class="tab-pane">
+        <div class="tab-toolbar">
+          <button id="btn-download-all-images" class="btn btn-sm btn-accent">Baixar Todas em ZIP</button>
+        </div>
+        <div id="images-grid" class="images-grid">
+          <div class="empty-state">Nenhuma imagem relevante encontrada.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="update-banner" class="update-banner hidden">
+    <div class="update-banner-text">
+      <strong>🚀 Nova versão <span id="update-latest-version"></span> disponível</strong>
+      <small>Baixe o ZIP oficial, extraia na mesma pasta e clique em 🔄 em chrome://extensions</small>
+    </div>
+    <button id="btn-update-download" class="btn btn-sm btn-accent">Baixar</button>
+  </div>
+
+  <footer class="app-footer">
+    <span id="footer-version">SnapTudo 🌶️</span>
+    <span id="footer-status">Pronto</span>
+  </footer>
+  <div class="update-footer">
+    <span id="update-recipes-info" title="Receitas sincronizadas do GitHub">Receitas: —</span>
+    <button id="btn-check-updates" class="link-btn" title="Buscar receitas e versão nova no GitHub">↻ Verificar agora</button>
+  </div>
+
+  <script src="../lib/jszip.min.js"></script>
+  <script src="../lib/hls_downloader.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

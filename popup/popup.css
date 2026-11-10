@@ -1,0 +1,561 @@
+/* SnapTudo Popup Styles 🌶️ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 390px;
+  min-height: 500px;
+  max-height: 620px;
+  background-color: #0d0e12;
+  color: #f1f2f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Header */
+.app-header {
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #181922 0%, #101117 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-accent {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #ff3b5c;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: #8c8e9c;
+}
+
+/* Content */
+.app-content {
+  flex: 1;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.view-section.hidden,
+.hidden {
+  display: none !important;
+}
+
+/* Sub-abas de Modo Instagram */
+.insta-tab-bar {
+  display: flex;
+  background: #181922;
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.insta-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #8c8e9c;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.insta-tab-btn.active {
+  background: #ff3b5c;
+  color: #ffffff;
+}
+
+/* Status Card */
+.status-card {
+  background: #161720;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #717382;
+}
+
+.status-indicator.active {
+  background: #00d26a;
+  box-shadow: 0 0 8px rgba(0, 210, 106, 0.4);
+}
+
+.status-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8c8e9c;
+}
+
+.post-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.post-user {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff3b5c;
+}
+
+.post-caption {
+  font-size: 12px;
+  color: #b0b3c1;
+  line-height: 1.4;
+  max-height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Card de Perfil */
+.profile-card {
+  background: linear-gradient(135deg, #181924 0%, #1f1a2a 100%);
+  border-color: rgba(255, 59, 92, 0.25);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff3b5c;
+  background: #232533;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-username {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.profile-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #00d26a;
+}
+
+/* Filtros do Perfil */
+.filter-box {
+  margin-bottom: 12px;
+}
+
+.filter-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8c8e9c;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  flex: 1;
+  background: #181922;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #b0b3c1;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.chip:hover {
+  background: #21222e;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.chip.active {
+  background: rgba(255, 59, 92, 0.2);
+  border-color: #ff3b5c;
+  color: #ff3b5c;
+}
+
+.profile-hint {
+  font-size: 11px;
+  color: #717382;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Botões */
+.actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.btn-large {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+.btn-primary {
+  background: #1f212d;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.btn-primary:hover {
+  background: #2a2c3a;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.btn-accent {
+  background: #ff3b5c;
+  color: #ffffff;
+}
+
+.btn-accent:hover {
+  background: #e02848;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #b0b3c1;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #8c8e9c;
+  line-height: 1.4;
+}
+
+/* Abas de Outros Sites */
+.tab-nav {
+  display: flex;
+  background: #181922;
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #8c8e9c;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-btn.active {
+  background: #232533;
+  color: #ffffff;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+.media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.media-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #181922;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.media-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.media-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.media-meta {
+  font-size: 11px;
+  color: #8c8e9c;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px 12px;
+  color: #717382;
+  font-size: 12px;
+}
+
+/* Barra de Progresso HLS e Perfil */
+.hls-progress-box {
+  background: #181924;
+  border: 1px solid rgba(255, 59, 92, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.hls-progress-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff3b5c;
+  margin-bottom: 6px;
+}
+
+.hls-bar-track {
+  width: 100%;
+  height: 6px;
+  background: #232533;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.hls-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff3b5c 0%, #ff758c 100%);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+.hls-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #b0b3c1;
+}
+
+/* Footer */
+.app-footer {
+  padding: 8px 16px;
+  background: #101117;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #717382;
+}
+
+/* Banner de Atualização de Versão */
+.update-banner {
+  background: linear-gradient(90deg, #1f2233 0%, #2a1f2f 100%);
+  border-top: 1px solid #ff3b5c;
+  border-bottom: 1px solid rgba(255, 59, 92, 0.3);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  animation: slideDown 0.25s ease-out;
+}
+
+.update-banner.hidden {
+  display: none !important;
+}
+
+.update-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #f4f4f5;
+  line-height: 1.3;
+}
+
+.update-banner-text strong {
+  color: #ff3b5c;
+  font-size: 11px;
+}
+
+.update-banner-text small {
+  color: #a1a1aa;
+  font-size: 10px;
+}
+
+.update-banner-text code {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+/* Rodapé de Receitas e Verificação */
+.update-footer {
+  padding: 6px 16px;
+  background: #0b0c10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #717382;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.link-btn:hover {
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.1);
+  text-decoration: underline;
+}
+
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

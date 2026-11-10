@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "recipesVersion": "2026.11.09.1",
+  "updatedAt": "2026-11-09T23:30:00-03:00",
+  "minExtensionVersion": "1.2.0",
+  "notes": "Receitas declarativas (somente dados). Edite este arquivo no GitHub quando uma plataforma mudar; as extensões instaladas puxam a versão nova automaticamente em até 6h (ou na hora, pelo botão 'Verificar agora').",
+
+  "instagram": {
+    "appId": "936619743392459",
+    "asbdId": "129477",
+    "mediaInfoEndpoint": "https://www.instagram.com/api/v1/media/{mediaId}/info/",
+    "graphqlEndpoint": "https://www.instagram.com/api/graphql",
+    "graphqlDocIds": [
+      "10015901848480474",
+      "8845758582119845",
+      "24368985919464652",
+      "7119106094848386",
+      "5572260122820385"
+    ],
+    "shortcodeAlphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
+    "reservedPaths": [
+      "p", "reel", "reels", "stories", "explore", "direct", "accounts",
+      "emails", "your_activity", "login", "create", "settings"
+    ],
+    "reelsActionLabels": {
+      "like": ["Curtir", "Like", "Descurtir", "Me gusta"],
+      "comment": ["Comentar", "Comment"],
+      "share": ["Compartilhar", "Compartir", "Share"],
+      "save": ["Salvar", "Save", "Guardar", "Salvo", "Saved"],
+      "more": ["Mais", "More", "Más"]
+    }
+  },
+
+  "sniffer": {
+    "maxStreamsPerTab": 15,
+    "adAndTrackingPatterns": [
+      "doubleclick.net", "googlesyndication.com", "google-analytics.com",
+      "scorecardresearch.com", "adnxs.com", "adservice.google", "pagead",
+      "amazon-adsystem.com", "pubmatic.com", "criteo.com", "adroll.com",
+      "cadmus.globo.com", "ads.globo.com", "metrics", "analytics", "telemetry",
+      "beacon", "segment-timeline", "ping", "stats", "taboola.com", "outbrain.com"
+    ]
+  },
+
+  "youtube": {
+    "primaryUrlTemplate": "https://cobalt.tools/#{url}",
+    "alternativeUrlTemplate": "https://9xbuddy.com/process?url={urlEncoded}"
+  }
+}
+

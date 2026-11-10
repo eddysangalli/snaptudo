@@ -1,0 +1,221 @@
+/* SnapTudo - Estilos no Instagram 🌶️ */
+
+/* Container dos botões SnapTudo na barra de ações */
+.snaptudo-action-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  margin: 0 !important;
+  margin-right: 2px !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* Botões de ação SnapTudo */
+.snaptudo-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 3px !important;
+  border-radius: 50% !important;
+  color: inherit !important;
+  transition: transform 0.15s ease, background-color 0.15s ease !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.snaptudo-btn:hover {
+  transform: scale(1.1) !important;
+  background-color: rgba(128, 128, 128, 0.18) !important;
+}
+
+.snaptudo-btn:active {
+  transform: scale(0.92) !important;
+}
+
+.snaptudo-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Botão especial ZIP compacto e elegante */
+.snaptudo-btn-zip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  height: 24px !important;
+  min-width: 40px !important;
+  gap: 2px !important;
+  padding: 1px 5px !important;
+  border-radius: 6px !important;
+  background: rgba(255, 59, 92, 0.15) !important;
+  border: 1px solid rgba(255, 59, 92, 0.4) !important;
+  color: #ff3b5c !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.snaptudo-btn-zip:hover {
+  background: rgba(255, 59, 92, 0.28) !important;
+  border-color: #ff3b5c !important;
+  transform: scale(1.06) !important;
+}
+
+.snaptudo-btn-zip svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: #ff3b5c !important;
+  stroke-width: 2.2 !important;
+}
+
+/* Grupo de botões no modo Reels vertical */
+.snaptudo-reel-group {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 8px 0 !important;
+  user-select: none !important;
+  position: relative !important;
+  z-index: 99 !important;
+  pointer-events: auto !important;
+}
+
+/* Dock flutuante de contingência para páginas de Reels */
+.snaptudo-reel-floating-dock {
+  position: absolute !important;
+  right: 18px !important;
+  bottom: 85px !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  pointer-events: auto !important;
+}
+
+.snaptudo-reel-group .snaptudo-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  background: rgba(25, 25, 25, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  backdrop-filter: blur(8px) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+.snaptudo-reel-group .snaptudo-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.2 !important;
+  fill: none !important;
+}
+
+.snaptudo-reel-group .snaptudo-btn:hover {
+  background: rgba(255, 59, 92, 0.85) !important;
+  border-color: #ff3b5c !important;
+  transform: scale(1.12) !important;
+}
+
+.snaptudo-reel-group .snaptudo-btn-zip {
+  width: auto !important;
+  height: 24px !important;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  border-radius: 12px !important;
+  background: rgba(255, 59, 92, 0.45) !important;
+  border: 1px solid #ff3b5c !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+}
+
+/* Indicador de carregamento no botão */
+.snaptudo-btn.loading {
+  pointer-events: none !important;
+  opacity: 0.7 !important;
+}
+
+.snaptudo-spinner {
+  display: inline-block !important;
+  width: 13px !important;
+  height: 13px !important;
+  border: 2px solid rgba(255, 59, 92, 0.3) !important;
+  border-radius: 50% !important;
+  border-top-color: #ff3b5c !important;
+  animation: snaptudo-spin 0.7s linear infinite !important;
+}
+
+@keyframes snaptudo-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Toast Flutuante de Notificação SnapTudo */
+.snaptudo-toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: rgba(18, 18, 20, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  color: #ffffff !important;
+  padding: 12px 18px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transform: translateY(14px) scale(0.96) !important;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.28) !important;
+}
+
+.snaptudo-toast.visible {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+.snaptudo-toast .toast-icon {
+  font-size: 16px !important;
+}
+
+/* Barra de Stories */
+.snaptudo-stories-bar {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 8px !important;
+}
+
+.snaptudo-stories-bar .snaptudo-btn {
+  background: rgba(0, 0, 0, 0.55) !important;
+  color: #fff !important;
+}

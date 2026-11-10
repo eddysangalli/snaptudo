@@ -1,0 +1,24 @@
+name: Verificar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validar extensão e canal de atualização
+        shell: pwsh
+        run: ./scripts/verify.ps1
+      - name: Testar empacotamento
+        shell: pwsh
+        run: ./scripts/build-release.ps1 -ExpectedVersion ((Get-Content manifest.json -Raw | ConvertFrom-Json).version)

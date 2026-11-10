@@ -1,0 +1,97 @@
+{
+  "manifest_version": 3,
+  "name": "SnapTudo - Baixador do Insta, YouTube & Mídias Web",
+  "short_name": "SnapTudo",
+  "version": "1.2.0",
+  "description": "Baixe vídeos em HD, fotos originais, carrosséis em ZIP do Instagram, vídeos do YouTube, Facebook, fluxos HLS (m3u8), DASH e mídias de qualquer site.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png",
+    "256": "icons/icon-256.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "SnapTudo - Baixador de Mídias",
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "permissions": [
+    "downloads",
+    "storage",
+    "activeTab",
+    "scripting",
+    "webRequest",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://*.instagram.com/*",
+    "*://*.youtube.com/*",
+    "*://*.facebook.com/*",
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.instagram.com/*"],
+      "js": ["content/instagram_main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["*://*.instagram.com/*"],
+      "js": ["lib/jszip.min.js", "content/instagram.js"],
+      "css": ["content/instagram.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content/youtube_main.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content/youtube.js"],
+      "css": ["content/youtube.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.facebook.com/*"],
+      "js": ["content/facebook.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://cobalt.tools/*"],
+      "js": ["content/cobalt_helper.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "*://*.instagram.com/*",
+        "*://*.youtube.com/*",
+        "*://cobalt.tools/*"
+      ],
+      "js": ["content/universal.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*",
+        "lib/jszip.min.js",
+        "lib/hls_downloader.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

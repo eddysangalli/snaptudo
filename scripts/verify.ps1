@@ -74,6 +74,11 @@ if ($LASTEXITCODE -ne 0) {
   throw "Testes de nomes do Instagram falharam."
 }
 
+& node (Join-Path $repoRoot "tests\story-main-world.browser.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Teste do fluxo ativo de Stories falhou."
+}
+
 & node (Join-Path $repoRoot "tests\sidecar-compat.test.js")
 if ($LASTEXITCODE -ne 0) {
   throw "Testes de compatibilidade do sidecar falharam."

@@ -305,7 +305,7 @@
       return;
     }
 
-    const { action, requestId, shortcode, targetId, recipe } = event.data;
+    const { action, requestId, shortcode, targetId, recipe, mediaUrl } = event.data;
 
     if (action === "GET_POST_INFO") {
       applyRecipe(recipe);
@@ -339,6 +339,31 @@
         requestId,
         url
       }, "*");
+    } else if (action === "FETCH_MEDIA_DATA") {
+      try {
+        const response = await fetch(mediaUrl, { credentials: "include", cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const declaredSize = Number(response.headers.get("content-length") || 0);
+        if (declaredSize > 100 * 1024 * 1024) throw new Error("Story maior que o limite de 100 MB");
+        const mime = response.headers.get("content-type") || "application/octet-stream";
+        const buffer = await response.arrayBuffer();
+        if (buffer.byteLength > 100 * 1024 * 1024) throw new Error("Story maior que o limite de 100 MB");
+        window.postMessage({
+          source: "SNAPTUDO_MAIN",
+          action: "MEDIA_DATA_RESPONSE",
+          requestId,
+          success: true,
+          data: { buffer, mime }
+        }, "*", [buffer]);
+      } catch (error) {
+        window.postMessage({
+          source: "SNAPTUDO_MAIN",
+          action: "MEDIA_DATA_RESPONSE",
+          requestId,
+          success: false,
+          error: error?.message || String(error)
+        }, "*");
+      }
     }
   });
 

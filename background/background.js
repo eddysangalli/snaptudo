@@ -179,6 +179,16 @@ function isYtDlpJobActive(job) {
   return ["queued", "starting", "downloading", "processing"].includes(job?.state);
 }
 
+function getVideoStreamsForTab(tabId) {
+  const list = tabMediaStreams.get(tabId) || [];
+  return list.filter(item => {
+    const u = item.url.toLowerCase();
+    const isImage = u.includes(".jpg") || u.includes(".jpeg") || u.includes(".png") || u.includes("_thumbnail") || u.includes("video_first_frame");
+    if (isImage) return false;
+    return u.includes(".mp4") || u.includes(".webm") || u.includes("/o1/v/") || u.includes("/v/t16/");
+  }).sort((a, b) => Number(b.time || 0) - Number(a.time || 0));
+}
+
 function setYtDlpBadge(job, tabId) {
   let text = "";
   let color = "#71717a";
@@ -390,22 +400,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Obter a URL de vídeo mais recente capturada da aba atual
   if (action === "getLatestVideoForTab") {
     const tabId = sender?.tab?.id || message.tabId;
-    const list = tabMediaStreams.get(tabId) || [];
-    // Filtrar ESTRITAMENTE apenas vídeos reais (.mp4, .webm ou streams de vídeo)
-    // NUNCA retornar imagens (.jpg, .png, thumbnails ou posters)
-    const videoStreams = list.filter(item => {
-      const u = item.url.toLowerCase();
-      const isImage = u.includes(".jpg") || u.includes(".jpeg") || u.includes(".png") || u.includes("_thumbnail") || u.includes("video_first_frame");
-      if (isImage) return false;
-      return u.includes(".mp4") || u.includes(".webm") || u.includes("/o1/v/") || u.includes("/v/t16/");
-    });
+    const videoStreams = getVideoStreamsForTab(tabId);
 
     if (videoStreams.length > 0) {
-      sendResponse({ success: true, url: videoStreams[videoStreams.length - 1].url });
+      sendResponse({ success: true, url: videoStreams[0].url });
     } else {
       sendResponse({ success: false });
     }
     return true;
+  }
+
+  if (action === "getVideoCandidatesForTab") {
+    const tabId = sender?.tab?.id || message.tabId;
+    const urls = getVideoStreamsForTab(tabId).slice(0, 8).map(item => item.url);
+    sendResponse({ success: urls.length > 0, urls });
+    return false;
   }
 
   // Fetch com permissão do background para contornar restrições de CORS em arquivos binários (HLS / M3U8 Globo)

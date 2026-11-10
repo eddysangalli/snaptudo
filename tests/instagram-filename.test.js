@@ -5,12 +5,26 @@ const {
   buildStoryFilename,
   extractStoryIdFromMediaUrl,
   getStoryIdentity,
+  orderMediaCandidates,
   parseStoryUrl
 } = require("../lib/instagram-filename.js");
 
 assert.deepEqual(
   parseStoryUrl("https://www.instagram.com/stories/leomoreiraaa/3712345678901234567/"),
   { username: "leomoreiraaa", storyId: "3712345678901234567" }
+);
+
+assert.deepEqual(
+  orderMediaCandidates("blob:https://www.instagram.com/ativo", [
+    "https://cdn.example/antigo.mp4",
+    "blob:https://www.instagram.com/ativo",
+    "https://cdn.example/novo.mp4"
+  ]),
+  [
+    "blob:https://www.instagram.com/ativo",
+    "https://cdn.example/antigo.mp4",
+    "https://cdn.example/novo.mp4"
+  ]
 );
 
 assert.equal(

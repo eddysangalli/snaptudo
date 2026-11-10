@@ -31,7 +31,7 @@ Não carregue diretamente uma pasta temporária ou o ZIP.
 
 O sidecar é registrado somente para o ID fixo `epjkbhcahfaojangofedoginhmcjbfol`. Ele aceita apenas links HTTPS do YouTube e sempre desativa playlists. Com FFmpeg instalado, combina vídeo e áudio em MP4 até 1080p; sem FFmpeg, tenta um formato combinado de até 720p. Veja [sidecar/README.md](sidecar/README.md).
 
-O sidecar não precisa ser reinstalado a cada versão da extensão. A extensão verifica uma versão mínima compatível e só pede uma nova instalação quando o protocolo local ou o motor do sidecar realmente mudou. A versão 1.2.4 da extensão aceita sidecar 1.2.3 ou superior.
+O sidecar não precisa ser reinstalado a cada versão da extensão. A extensão verifica uma versão mínima compatível e só pede uma nova instalação quando o protocolo local ou o motor do sidecar realmente mudou. A versão 1.2.5 da extensão aceita sidecar 1.2.3 ou superior.
 
 ## Canal de atualizações
 
@@ -49,7 +49,7 @@ Uma extensão carregada sem compactação não tem permissão para reescrever a 
 2. Se o executável/protocolo do sidecar mudou, altere também `sidecar/VERSION`; atualizações somente da extensão mantêm a versão anterior do sidecar.
 3. Atualize e teste as receitas, se necessário.
 4. Execute `./scripts/verify.ps1`.
-5. Crie e envie uma tag igual à versão da extensão, por exemplo: `git tag v1.2.4` e `git push origin v1.2.4`.
+5. Crie e envie uma tag igual à versão da extensão, por exemplo: `git tag v1.2.5` e `git push origin v1.2.5`.
 6. O workflow gera o ZIP da extensão e o ZIP da versão indicada em `sidecar/VERSION`, publica os SHA-256 e cria a Release.
 
 O endpoint público consultado pela extensão é a API de `releases/latest` deste repositório. Releases marcadas como rascunho ou pré-lançamento não entram no canal estável.

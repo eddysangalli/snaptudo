@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SnapTudo - Baixador do Insta, YouTube & Mídias Web",
   "short_name": "SnapTudo",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsNrtMTPOd7kvJ3bwrU4s/07xrfOeb+Yh28sHiYms+7+JXI81Bqcxy2/QWJPBmd9n1QGiiRz3WcbQRkx4V8jafDXDX5lOvYwLHdW/zAsTCMRd9rvhQJHjYOLa85eHz1foGkefrpOP5UUEM7c5J2rNPmFnDw7tpaPwUJXdtH6fAhrroQTr0VE/tncLq/3rWO1as3zK/J5W6deNsjEs/sh65ZJmdnPywowi3OKJ15IOaMheTwegcZQvYSEmY31otbacnsVBoYFoTjE+QCfcNRRYFKNERy3IB8/1DylVCDBa/udzd9UJEdZ3KngWHiAwj+w2subtv3gKR34v0BzUnyTsrQIDAQAB",
   "description": "Baixe vídeos em HD, fotos originais, carrosséis em ZIP do Instagram, vídeos do YouTube, Facebook, fluxos HLS (m3u8), DASH e mídias de qualquer site.",
   "icons": {
@@ -49,7 +49,7 @@
     },
     {
       "matches": ["*://*.instagram.com/*"],
-      "js": ["lib/jszip.min.js", "content/instagram.js"],
+      "js": ["lib/jszip.min.js", "lib/instagram-filename.js", "content/instagram.js"],
       "css": ["content/instagram.css"],
       "run_at": "document_idle"
     },

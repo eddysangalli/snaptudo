@@ -26,11 +26,19 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
+          $sidecarVersion = (Get-Content ./sidecar/VERSION -Raw).Trim()
+          if ($sidecarVersion -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') { throw "Versão do sidecar inválida: $sidecarVersion" }
           ./scripts/verify.ps1
           ./scripts/build-release.ps1 -ExpectedVersion $version
-          ./sidecar/build-sidecar.ps1 -Version $version
+          ./sidecar/build-sidecar.ps1 -Version $sidecarVersion
       - name: Criar Release estável
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/* --verify-tag --generate-notes --title "SnapTudo ${{ github.ref_name }}"
+        run: |
+          $notes = ".github/release-notes/${{ github.ref_name }}.md"
+          if (Test-Path -LiteralPath $notes) {
+            gh release create "${{ github.ref_name }}" dist/* --verify-tag --notes-file $notes --title "SnapTudo ${{ github.ref_name }}"
+          } else {
+            gh release create "${{ github.ref_name }}" dist/* --verify-tag --generate-notes --title "SnapTudo ${{ github.ref_name }}"
+          }

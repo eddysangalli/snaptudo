@@ -57,6 +57,7 @@ Copy-Item -LiteralPath (Join-Path $sidecarRoot "uninstall-sidecar.ps1") -Destina
 Copy-Item -LiteralPath (Join-Path $sidecarRoot "README.md") -Destination $packageRoot
 
 $metadata = [ordered]@{
+  sidecarVersion = $Version.TrimStart("v")
   snapTudoVersion = $Version.TrimStart("v")
   ytDlpVersion = $release.tag_name
   ytDlpSha256 = $actualYtDlpHash

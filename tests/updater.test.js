@@ -11,11 +11,16 @@ const bundledRecipes = JSON.parse(fs.readFileSync(path.join(repoRoot, "recipes",
 
 const stored = {};
 const event = () => ({ addListener() {} });
+let installedSidecarVersion = "1.2.2";
 
 const chrome = {
   runtime: {
     getManifest: () => ({ version: "1.2.0" }),
     getURL: relative => `chrome-extension://test/${relative}`,
+    sendNativeMessage: (_host, message, callback) => {
+      assert.equal(message.action, "ping");
+      callback({ success: true, version: installedSidecarVersion, ytDlpVersion: "2026.10.26" });
+    },
     onInstalled: event(),
     onStartup: event(),
     onMessage: event()
@@ -57,11 +62,18 @@ async function fetchMock(url) {
         tag_name: "v1.2.1",
         html_url: "https://github.com/eddysangalli/snaptudo/releases/tag/v1.2.1",
         zipball_url: "https://api.github.com/repos/eddysangalli/snaptudo/zipball/v1.2.1",
-        assets: [{
-          name: "snaptudo-v1.2.1.zip",
-          browser_download_url: "https://github.com/eddysangalli/snaptudo/releases/download/v1.2.1/snaptudo-v1.2.1.zip",
-          digest: `sha256:${"a".repeat(64)}`
-        }]
+        assets: [
+          {
+            name: "snaptudo-v1.2.1.zip",
+            browser_download_url: "https://github.com/eddysangalli/snaptudo/releases/download/v1.2.1/snaptudo-v1.2.1.zip",
+            digest: `sha256:${"a".repeat(64)}`
+          },
+          {
+            name: "snaptudo-sidecar-v1.2.3-win-x64.zip",
+            browser_download_url: "https://github.com/eddysangalli/snaptudo/releases/download/v1.2.1/snaptudo-sidecar-v1.2.3-win-x64.zip",
+            digest: `sha256:${"b".repeat(64)}`
+          }
+        ]
       })
     };
   }
@@ -91,7 +103,19 @@ vm.runInContext(updaterSource, context, { filename: "background/updater.js" });
   assert.equal(status.recipesVersion, "2026.11.09.3");
   assert.match(status.downloadUrl, /snaptudo-v1\.2\.1\.zip$/);
   assert.equal(status.sha256, "a".repeat(64));
+  assert.equal(status.sidecarInstalled, true);
+  assert.equal(status.sidecarInstalledVersion, "1.2.2");
+  assert.equal(status.sidecarLatestVersion, "1.2.3");
+  assert.equal(status.sidecarUpdateAvailable, true);
+  assert.match(status.sidecarDownloadUrl, /snaptudo-sidecar-v1\.2\.3-win-x64\.zip$/);
+  assert.equal(status.sidecarSha256, "b".repeat(64));
   assert.equal(stored.snaptudoUpdateStatus.latestVersion, "1.2.1");
+
+  installedSidecarVersion = "1.2.3";
+  const compatibleStatus = await context.self.SnapTudoUpdater.runUpdateCycle();
+  assert.equal(compatibleStatus.sidecarInstalledVersion, "1.2.3");
+  assert.equal(compatibleStatus.sidecarLatestVersion, "1.2.3");
+  assert.equal(compatibleStatus.sidecarUpdateAvailable, false);
 
   console.log("updater.test.js: OK");
 })().catch(error => {

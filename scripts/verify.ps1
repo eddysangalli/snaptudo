@@ -69,6 +69,16 @@ if ($LASTEXITCODE -ne 0) {
   throw "Testes do atualizador falharam."
 }
 
+& node (Join-Path $repoRoot "tests\instagram-filename.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Testes de nomes do Instagram falharam."
+}
+
+& node (Join-Path $repoRoot "tests\sidecar-compat.test.js")
+if ($LASTEXITCODE -ne 0) {
+  throw "Testes de compatibilidade do sidecar falharam."
+}
+
 Push-Location (Join-Path $repoRoot "sidecar")
 try {
   & go test ./...

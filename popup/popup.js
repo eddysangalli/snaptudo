@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (err || !res?.alive) {
               chrome.scripting.executeScript({
                 target: { tabId },
-                files: ["lib/jszip.min.js", "content/instagram.js"]
+                files: ["lib/jszip.min.js", "lib/instagram-filename.js", "content/instagram.js"]
               }, () => {
                 const injectErr = chrome.runtime.lastError;
                 setTimeout(() => resolve(!injectErr), 150);
@@ -460,8 +460,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         sidecarStatus.style.color = "#fbbf24";
         return;
       }
+      if (status.needsUpdate) {
+        sidecarStatus.textContent = `⚠️ Sidecar ${status.installedVersion} antigo. Necessário ${status.requiredVersion} ou superior.`;
+        sidecarStatus.style.color = "#fbbf24";
+        return;
+      }
       const ffmpeg = status.ffmpegFound ? "FFmpeg ativo: vídeo + áudio até 1080p" : "sem FFmpeg: formato combinado até 720p";
-      sidecarStatus.textContent = `✓ yt-dlp ${status.ytDlpVersion || "ativo"} · ${ffmpeg}`;
+      sidecarStatus.textContent = `✓ Sidecar ${status.installedVersion} compatível · yt-dlp ${status.ytDlpVersion || "ativo"} · ${ffmpeg}`;
       sidecarStatus.style.color = "#86efac";
       btnOpenDownloads?.classList.remove("hidden");
       refreshYtDlpJobStatus();
@@ -477,7 +482,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (chrome.runtime.lastError || !response?.success) {
           sidecarStatus.textContent = `⚠️ ${response?.error || "Sidecar yt-dlp indisponível."}`;
           sidecarStatus.style.color = "#fbbf24";
-          if (response?.sidecarMissing) {
+          if (response?.sidecarMissing || response?.sidecarOutdated) {
             chrome.tabs.create({ url: "https://github.com/eddysangalli/snaptudo/releases/latest" });
           }
           return;
@@ -896,8 +901,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   function initUpdateChecker() {
     const footerVer = document.getElementById("footer-version");
     const banner = document.getElementById("update-banner");
-    const latestVerElem = document.getElementById("update-latest-version");
+    const updateTitle = document.getElementById("update-title");
+    const updateSummary = document.getElementById("update-summary");
     const btnDownload = document.getElementById("btn-update-download");
+    const btnSidecar = document.getElementById("btn-update-sidecar");
     const recipesInfo = document.getElementById("update-recipes-info");
     const btnCheck = document.getElementById("btn-check-updates");
 
@@ -914,10 +921,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         recipesInfo.title = `Última sincronização: ${status.checkedAt ? new Date(status.checkedAt).toLocaleString() : "Agora"}`;
       }
 
-      if (status.updateAvailable && status.latestVersion) {
+      const extensionUpdate = !!(status.updateAvailable && status.latestVersion);
+      const sidecarUpdate = !!(status.sidecarUpdateAvailable && status.sidecarLatestVersion);
+
+      if (extensionUpdate || sidecarUpdate) {
         if (banner) banner.classList.remove("hidden");
-        if (latestVerElem) latestVerElem.textContent = `v${status.latestVersion}`;
+        if (updateTitle) {
+          updateTitle.textContent = extensionUpdate && sidecarUpdate
+            ? `🚀 Extensão v${status.latestVersion} + sidecar v${status.sidecarLatestVersion}`
+            : extensionUpdate
+              ? `🚀 Nova extensão v${status.latestVersion} disponível`
+              : `🔧 Novo sidecar v${status.sidecarLatestVersion} disponível`;
+        }
+        if (updateSummary) {
+          updateSummary.textContent = extensionUpdate && sidecarUpdate
+            ? "Baixe os dois arquivos abaixo e siga o mini manual."
+            : extensionUpdate
+              ? "Baixe a extensão; seu sidecar instalado continua atualizado."
+              : "Baixe e reinstale somente o sidecar; a extensão já está atualizada.";
+        }
         if (btnDownload) {
+          btnDownload.classList.toggle("hidden", !extensionUpdate);
           btnDownload.onclick = () => {
             const url = status.downloadUrl || status.releaseUrl || "https://github.com/eddysangalli/snaptudo/releases/latest";
             chrome.downloads.download({
@@ -928,6 +952,19 @@ document.addEventListener("DOMContentLoaded", async () => {
               if (chrome.runtime.lastError) {
                 chrome.tabs.create({ url: status.releaseUrl || url });
               }
+            });
+          };
+        }
+        if (btnSidecar) {
+          btnSidecar.classList.toggle("hidden", !sidecarUpdate);
+          btnSidecar.onclick = () => {
+            const url = status.sidecarDownloadUrl || status.releaseUrl || "https://github.com/eddysangalli/snaptudo/releases/latest";
+            chrome.downloads.download({
+              url,
+              filename: `SnapTudo/snaptudo-sidecar-v${status.sidecarLatestVersion}-win-x64.zip`,
+              saveAs: true
+            }, () => {
+              if (chrome.runtime.lastError) chrome.tabs.create({ url: status.releaseUrl || url });
             });
           };
         }
@@ -964,7 +1001,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             applyUpdateUI(res.status);
-            btnCheck.textContent = res.status.updateAvailable ? "🚀 Nova versão!" : "✓ Atualizado!";
+            btnCheck.textContent = (res.status.updateAvailable || res.status.sidecarUpdateAvailable)
+              ? "🚀 Atualizações disponíveis!"
+              : "✓ Atualizado!";
             setTimeout(() => { btnCheck.textContent = originalText; }, 3000);
           });
         } catch (e) {

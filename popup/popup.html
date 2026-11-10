@@ -210,10 +210,17 @@
 
   <div id="update-banner" class="update-banner hidden">
     <div class="update-banner-text">
-      <strong>🚀 Nova versão <span id="update-latest-version"></span> disponível</strong>
-      <small>Baixe o ZIP oficial, extraia na mesma pasta e clique em 🔄 em chrome://extensions</small>
+      <strong id="update-title">🚀 Nova versão disponível</strong>
+      <small id="update-summary">Baixe o ZIP oficial, extraia na mesma pasta e clique em 🔄 em chrome://extensions</small>
+      <details class="update-mini-guide">
+        <summary>Como atualizar</summary>
+        <span>1. Extensão: extraia o ZIP por cima da pasta atual e recarregue em chrome://extensions.<br>2. Sidecar, se indicado: extraia o ZIP e execute install-sidecar.ps1.</span>
+      </details>
     </div>
-    <button id="btn-update-download" class="btn btn-sm btn-accent">Baixar</button>
+    <div class="update-banner-actions">
+      <button id="btn-update-download" class="btn btn-sm btn-accent">Extensão</button>
+      <button id="btn-update-sidecar" class="btn btn-sm btn-primary hidden">Sidecar</button>
+    </div>
   </div>
 
   <footer class="app-footer">

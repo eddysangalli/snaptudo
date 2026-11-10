@@ -4,7 +4,7 @@
  */
 
 // Canal de atualizações (receitas remotas + checagem de versão no GitHub)
-importScripts("updater.js");
+importScripts("updater.js", "sidecar-compat.js");
 
 const SNAPTUDO_YTDLP_HOST = "com.eddysangalli.snaptudo";
 const YTDLP_JOB_STORAGE_KEY = "snaptudoYtDlpJob";
@@ -288,10 +288,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return;
       }
+      const compatibility = self.SnapTudoSidecarCompat.evaluate(response?.version);
       sendResponse({
+        ...response,
         success: true,
         available: response?.success === true,
-        ...response
+        ...compatibility
       });
     });
     return true;
@@ -304,11 +306,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
 
-    chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, {
-      action: "startDownload",
-      mode,
-      url: message.url
-    }, (response) => {
+    chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, { action: "ping" }, (pingResponse) => {
       const error = chrome.runtime.lastError;
       if (error) {
         sendResponse({
@@ -318,11 +316,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return;
       }
-      const result = response || { success: false, error: "O sidecar não respondeu." };
-      if (result.success && result.job) {
-        persistYtDlpJob(result.job, Number.isInteger(message.tabId) ? message.tabId : null);
+      if (!pingResponse?.success) {
+        sendResponse(pingResponse || { success: false, error: "O sidecar não respondeu." });
+        return;
       }
-      sendResponse(result);
+      const compatibility = self.SnapTudoSidecarCompat.evaluate(pingResponse.version);
+      if (compatibility.needsUpdate) {
+        sendResponse({
+          success: false,
+          sidecarOutdated: true,
+          ...compatibility,
+          error: `Sidecar ${compatibility.installedVersion} incompatível. Instale a versão ${compatibility.requiredVersion} ou superior.`
+        });
+        return;
+      }
+
+      chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, {
+        action: "startDownload",
+        mode,
+        url: message.url
+      }, (response) => {
+        const startError = chrome.runtime.lastError;
+        if (startError) {
+          sendResponse({
+            success: false,
+            sidecarMissing: true,
+            error: `Falha do Chrome ao abrir o sidecar: ${startError.message || "erro desconhecido"}`
+          });
+          return;
+        }
+        const result = response || { success: false, error: "O sidecar não respondeu." };
+        if (result.success && result.job) {
+          persistYtDlpJob(result.job, Number.isInteger(message.tabId) ? message.tabId : null);
+        }
+        sendResponse(result);
+      });
     });
     return true;
   }
@@ -432,7 +460,7 @@ chrome.runtime.onInstalled.addListener(async () => {
       if (t.url.includes("instagram.com")) {
         chrome.scripting.executeScript({
           target: { tabId: t.id },
-          files: ["lib/jszip.min.js", "content/instagram.js"]
+          files: ["lib/jszip.min.js", "lib/instagram-filename.js", "content/instagram.js"]
         }).catch(() => {});
       } else if (t.url.includes("youtube.com")) {
         chrome.scripting.executeScript({

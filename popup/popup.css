@@ -514,6 +514,35 @@ body {
   font-family: monospace;
 }
 
+.update-banner-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.update-banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.update-mini-guide {
+  color: #a1a1aa;
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+.update-mini-guide summary {
+  color: #38bdf8;
+  cursor: pointer;
+}
+
+.update-mini-guide span {
+  display: block;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
 /* Rodapé de Receitas e Verificação */
 .update-footer {
   padding: 6px 16px;

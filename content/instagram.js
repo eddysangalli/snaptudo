@@ -280,6 +280,56 @@
     return null;
   }
 
+  function findActiveStoryHref(mediaElement) {
+    const directLink = mediaElement?.closest?.('a[href*="/stories/"]')?.getAttribute("href");
+    if (directLink) return directLink;
+
+    const links = [...document.querySelectorAll('a[href*="/stories/"]')];
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const activeUsername = pathParts[0] === "stories" ? pathParts[1] : "";
+    const activeUserPattern = activeUsername
+      ? new RegExp(`/stories/${activeUsername.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/\\d{10,30}/?(?:[?#]|$)`)
+      : null;
+    const withStoryId = links.find(link => {
+      const href = link.getAttribute("href") || "";
+      return activeUserPattern?.test(href) || /\/stories\/[^/]+\/\d{10,30}\/?(?:[?#]|$)/.test(href);
+    });
+    return withStoryId?.getAttribute("href") || "";
+  }
+
+  function findStoryIdHint(mediaElement) {
+    let element = mediaElement;
+    for (let depth = 0; element && depth < 8; depth++, element = element.parentElement) {
+      for (const attribute of ["data-story-id", "data-media-id", "data-id", "id"]) {
+        const value = element.getAttribute?.(attribute) || "";
+        const match = value.match(/(?:^|\D)(\d{10,30})(?:\D|$)/);
+        if (match) return match[1];
+      }
+    }
+    return "";
+  }
+
+  function buildActiveStoryFilename(media, mediaUrl, blob) {
+    const options = {
+      pageUrl: window.location.href,
+      storyHref: findActiveStoryHref(media?.element),
+      storyId: findStoryIdHint(media?.element),
+      mediaUrl,
+      type: media?.type,
+      mime: blob?.type,
+      timestamp: Date.now()
+    };
+    if (globalThis.SnapTudoInstagramFilename?.buildStoryFilename) {
+      return globalThis.SnapTudoInstagramFilename.buildStoryFilename(options);
+    }
+
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const username = parts[0] === "stories" && parts[1] ? parts[1] : "instagram";
+    const storyId = parts[2] || options.storyId || options.timestamp;
+    const extension = media?.type === "video" ? "mp4" : (blob?.type?.includes("png") ? "png" : "jpg");
+    return `${username}_story_${storyId}.${extension}`;
+  }
+
   // Configuração dinâmica ("receita"): valores padrão embutidos, sobrescritos pela receita
   // publicada no GitHub (recipes/recipes.json) e sincronizada pelo background em chrome.storage.
   const IG_CONFIG = {
@@ -1281,7 +1331,6 @@
     dlStoryBtn.innerHTML = ICONS.download;
     dlStoryBtn.onclick = async () => {
       const media = findActiveStoryMedia();
-      const username = getUsername() || "Story";
       if (!media) {
         showToast("⚠️ Nenhuma mídia de story encontrada no momento.");
         return;
@@ -1300,8 +1349,8 @@
 
         const blob = await fetchMediaBlob(mediaUrl);
         if (!blob || blob.size === 0) throw new Error("A CDN não entregou a mídia.");
-        const extension = media.type === "video" ? "mp4" : (blob.type.includes("png") ? "png" : "jpg");
-        saveBlobLocally(blob, `Story_${username}_${Date.now()}.${extension}`);
+        const filename = buildActiveStoryFilename(media, mediaUrl, blob);
+        saveBlobLocally(blob, filename);
         showToast(`✅ Story preparado (${Math.max(1, Math.round(blob.size / 1024))} KB).`);
       } catch (error) {
         console.warn("[SnapTudo] Falha ao baixar Story autenticado:", error);

@@ -32,6 +32,7 @@ const SNAPTUDO_URLS = {
 
 const UPDATE_ALARM_NAME = "snaptudo-update-check";
 const UPDATE_INTERVAL_MINUTES = 360; // 6 horas
+const SNAPTUDO_SIDECAR_HOST = "com.eddysangalli.snaptudo";
 
 let snaptudoActiveRecipes = null;
 
@@ -109,6 +110,49 @@ async function refreshRemoteRecipes() {
   return { applied: false, reason: "já atualizada", remoteVersion: remote.recipesVersion };
 }
 
+function getInstalledSidecar() {
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendNativeMessage(SNAPTUDO_SIDECAR_HOST, { action: "ping" }, (response) => {
+        const error = chrome.runtime.lastError;
+        if (error || !response?.success) {
+          resolve({
+            installed: false,
+            version: null,
+            error: error?.message || response?.error || "Sidecar não instalado."
+          });
+          return;
+        }
+        resolve({
+          installed: true,
+          version: String(response.version || "0"),
+          ytDlpVersion: response.ytDlpVersion || null
+        });
+      });
+    } catch (error) {
+      resolve({ installed: false, version: null, error: error.message || String(error) });
+    }
+  });
+}
+
+function findSidecarPackage(assets) {
+  for (const asset of assets) {
+    const name = String(asset?.name || "");
+    const match = name.match(/^snaptudo-sidecar-v([0-9]+(?:\.[0-9]+){2,3})-win-x64\.zip$/i);
+    if (match) {
+      return {
+        version: match[1],
+        name,
+        downloadUrl: asset.browser_download_url || null,
+        sha256: typeof asset.digest === "string" && asset.digest.startsWith("sha256:")
+          ? asset.digest.slice("sha256:".length)
+          : null
+      };
+    }
+  }
+  return null;
+}
+
 async function checkExtensionUpdate() {
   const currentVersion = chrome.runtime.getManifest().version;
 
@@ -125,6 +169,13 @@ async function checkExtensionUpdate() {
     const expectedName = `snaptudo-v${latestVersion}.zip`.toLowerCase();
     const packageAsset = assets.find(asset => String(asset.name || "").toLowerCase() === expectedName)
       || assets.find(asset => /^snaptudo-v[\w.-]+\.zip$/i.test(String(asset.name || "")));
+    const sidecarPackage = findSidecarPackage(assets);
+    const installedSidecar = await getInstalledSidecar();
+    const sidecarUpdateAvailable = !!(
+      installedSidecar.installed
+      && sidecarPackage?.version
+      && compareVersions(sidecarPackage.version, installedSidecar.version) > 0
+    );
 
     return {
       currentVersion,
@@ -135,6 +186,15 @@ async function checkExtensionUpdate() {
       sha256: typeof packageAsset?.digest === "string" && packageAsset.digest.startsWith("sha256:")
         ? packageAsset.digest.slice("sha256:".length)
         : null,
+      sidecar: {
+        installed: installedSidecar.installed,
+        installedVersion: installedSidecar.version,
+        latestVersion: sidecarPackage?.version || null,
+        updateAvailable: sidecarUpdateAvailable,
+        downloadUrl: sidecarPackage?.downloadUrl || release.html_url || SNAPTUDO_URLS.releasesPage,
+        sha256: sidecarPackage?.sha256 || null,
+        error: installedSidecar.error || null
+      },
       source: "github-release"
     };
   }
@@ -152,6 +212,14 @@ async function checkExtensionUpdate() {
       downloadUrl: SNAPTUDO_URLS.zipDownload,
       releaseUrl: SNAPTUDO_URLS.repoPage,
       sha256: null,
+      sidecar: {
+        installed: false,
+        installedVersion: null,
+        latestVersion: null,
+        updateAvailable: false,
+        downloadUrl: SNAPTUDO_URLS.releasesPage,
+        sha256: null
+      },
       source: "main-fallback"
     };
   }
@@ -176,6 +244,14 @@ async function runUpdateCycle() {
         downloadUrl: SNAPTUDO_URLS.releasesPage,
         releaseUrl: SNAPTUDO_URLS.releasesPage,
         sha256: null,
+        sidecar: {
+          installed: false,
+          installedVersion: null,
+          latestVersion: null,
+          updateAvailable: false,
+          downloadUrl: SNAPTUDO_URLS.releasesPage,
+          sha256: null
+        },
         error: versionResult.reason?.message || String(versionResult.reason)
       };
   const checkedAt = new Date().toISOString();
@@ -188,6 +264,12 @@ async function runUpdateCycle() {
     downloadUrl: version.downloadUrl,
     releaseUrl: version.releaseUrl,
     sha256: version.sha256,
+    sidecarInstalled: version.sidecar?.installed === true,
+    sidecarInstalledVersion: version.sidecar?.installedVersion || null,
+    sidecarLatestVersion: version.sidecar?.latestVersion || null,
+    sidecarUpdateAvailable: version.sidecar?.updateAvailable === true,
+    sidecarDownloadUrl: version.sidecar?.downloadUrl || SNAPTUDO_URLS.releasesPage,
+    sidecarSha256: version.sidecar?.sha256 || null,
     recipesVersion: active.recipesVersion,
     recipes: recipesResult.status === "fulfilled"
       ? recipesResult.value

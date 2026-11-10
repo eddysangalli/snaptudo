@@ -16,6 +16,8 @@ O sidecar aceita apenas URLs HTTPS de `youtube.com` e `youtu.be`, sempre com `--
 
 Os arquivos são salvos, por padrão, em `Downloads\SnapTudo`. Se FFmpeg estiver instalado, o modo vídeo combina vídeo e áudio em MP4 até 1080p; sem FFmpeg, tenta um formato combinado de até 720p. O modo áudio baixa a melhor faixa M4A disponível.
 
+Durante o download, o ícone do SnapTudo mostra o percentual no badge. O estado fica salvo pelo sidecar: ao reabrir o popup, você vê se ainda está baixando, finalizando, concluído ou se ocorreu uma falha. O botão **Abrir pasta Downloads\SnapTudo** leva aos arquivos prontos; os logs técnicos ficam em `C:\ProgramData\SnapTudo\Sidecar\logs`.
+
 ## Desinstalar
 
 Execute `uninstall-sidecar.ps1` e confirme o pedido de administrador. A pasta de downloads não é removida.

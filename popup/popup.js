@@ -382,6 +382,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn360 = document.getElementById("btn-yt-360p");
     const btnAudio = document.getElementById("btn-yt-audio");
     const btnRec = document.getElementById("btn-yt-rec");
+    const btnOpenDownloads = document.getElementById("btn-yt-open-downloads");
     const sidecarStatus = document.getElementById("yt-sidecar-status");
     const ytCapturedBox = document.getElementById("yt-captured-box");
     const ytNetworkList = document.getElementById("yt-network-list");
@@ -405,6 +406,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       channelElem.textContent = ytData.channel ? `Canal: ${ytData.channel}` : "";
     });
 
+    let jobPollTimer = null;
+
+    function isActiveJob(job) {
+      return ["queued", "starting", "downloading", "processing"].includes(job?.state);
+    }
+
+    function renderYtDlpJob(job) {
+      if (!job) return;
+      btnOpenDownloads?.classList.remove("hidden");
+      sidecarStatus.title = [job.filePath, job.logPath].filter(Boolean).join("\n");
+      const progress = Number(job.progress || 0);
+      const filename = job.filePath ? job.filePath.split(/[\\/]/).pop() : "";
+
+      if (job.state === "completed") {
+        sidecarStatus.textContent = `✅ Último download concluído${filename ? `: ${filename}` : ""}`;
+        sidecarStatus.style.color = "#86efac";
+        footerStatus.textContent = "Download concluído";
+      } else if (job.state === "failed") {
+        sidecarStatus.textContent = `⚠️ Último download falhou: ${job.error || "consulte o log do sidecar"}`;
+        sidecarStatus.style.color = "#fca5a5";
+        footerStatus.textContent = "Falha no download";
+      } else if (job.state === "processing") {
+        sidecarStatus.textContent = "⚙️ Download concluído; finalizando vídeo e áudio...";
+        sidecarStatus.style.color = "#fbbf24";
+        footerStatus.textContent = "yt-dlp finalizando";
+      } else {
+        sidecarStatus.textContent = progress >= 1
+          ? `⬇️ Baixando pelo yt-dlp: ${progress.toFixed(1)}%`
+          : "⬇️ Download iniciado; aguardando progresso do yt-dlp...";
+        sidecarStatus.style.color = "#93c5fd";
+        footerStatus.textContent = "yt-dlp em execução";
+      }
+    }
+
+    function refreshYtDlpJobStatus() {
+      chrome.runtime.sendMessage({ action: "getYtDlpDownloadStatus" }, (response) => {
+        if (!chrome.runtime.lastError && response?.success && response.job) {
+          renderYtDlpJob(response.job);
+          if (isActiveJob(response.job)) {
+            clearTimeout(jobPollTimer);
+            jobPollTimer = setTimeout(refreshYtDlpJobStatus, 1500);
+          }
+        }
+      });
+    }
+
     chrome.runtime.sendMessage({ action: "getYtDlpStatus" }, (status) => {
       const runtimeError = chrome.runtime.lastError;
       if (runtimeError || !status?.available) {
@@ -416,13 +463,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       const ffmpeg = status.ffmpegFound ? "FFmpeg ativo: vídeo + áudio até 1080p" : "sem FFmpeg: formato combinado até 720p";
       sidecarStatus.textContent = `✓ yt-dlp ${status.ytDlpVersion || "ativo"} · ${ffmpeg}`;
       sidecarStatus.style.color = "#86efac";
+      btnOpenDownloads?.classList.remove("hidden");
+      refreshYtDlpJobStatus();
     });
 
     function startYtDlpDownload(mode, button) {
       const originalText = button.textContent;
       button.disabled = true;
       button.textContent = mode === "audio" ? "🎵 Iniciando áudio..." : "📥 Iniciando vídeo...";
-      chrome.runtime.sendMessage({ action: "startYtDlpDownload", mode, url: fullYtUrl }, (response) => {
+      chrome.runtime.sendMessage({ action: "startYtDlpDownload", mode, url: fullYtUrl, tabId: activeTab.id }, (response) => {
         button.disabled = false;
         button.textContent = originalText;
         if (chrome.runtime.lastError || !response?.success) {
@@ -433,15 +482,29 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
           return;
         }
-        sidecarStatus.textContent = `✓ Download iniciado pelo yt-dlp em ${response.downloadDir}`;
-        sidecarStatus.style.color = "#86efac";
-        footerStatus.textContent = "yt-dlp em execução";
+        if (response.job) {
+          renderYtDlpJob(response.job);
+          clearTimeout(jobPollTimer);
+          jobPollTimer = setTimeout(refreshYtDlpJobStatus, 1000);
+        } else {
+          sidecarStatus.textContent = `✓ Download iniciado pelo yt-dlp em ${response.downloadDir}`;
+          sidecarStatus.style.color = "#86efac";
+          footerStatus.textContent = "yt-dlp em execução";
+        }
       });
     }
 
     // 1. Download local pelo sidecar yt-dlp
     btn720.addEventListener("click", () => startYtDlpDownload("video", btn720));
     btnAudio.addEventListener("click", () => startYtDlpDownload("audio", btnAudio));
+    btnOpenDownloads?.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ action: "openYtDlpDownloadDir" }, (response) => {
+        if (chrome.runtime.lastError || !response?.success) {
+          sidecarStatus.textContent = `⚠️ ${response?.error || "Não foi possível abrir a pasta."}`;
+          sidecarStatus.style.color = "#fbbf24";
+        }
+      });
+    });
 
     // 2. Alternativa web pelo Cobalt
     btn360.addEventListener("click", () => {

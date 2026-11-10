@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
 	"encoding/json"
@@ -11,7 +12,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -25,6 +28,7 @@ type request struct {
 	Action string `json:"action"`
 	Mode   string `json:"mode"`
 	URL    string `json:"url"`
+	JobID  string `json:"jobId"`
 }
 
 type config struct {
@@ -35,20 +39,45 @@ type config struct {
 }
 
 type response struct {
-	Success     bool   `json:"success"`
-	Error       string `json:"error,omitempty"`
-	Version     string `json:"version,omitempty"`
-	YtDlp       string `json:"ytDlpVersion,omitempty"`
-	DownloadDir string `json:"downloadDir,omitempty"`
-	NodeFound   bool   `json:"nodeFound,omitempty"`
-	FFmpegFound bool   `json:"ffmpegFound,omitempty"`
-	Started     bool   `json:"started,omitempty"`
-	PID         int    `json:"pid,omitempty"`
-	LogPath     string `json:"logPath,omitempty"`
-	Mode        string `json:"mode,omitempty"`
+	Success     bool         `json:"success"`
+	Error       string       `json:"error,omitempty"`
+	Version     string       `json:"version,omitempty"`
+	YtDlp       string       `json:"ytDlpVersion,omitempty"`
+	DownloadDir string       `json:"downloadDir,omitempty"`
+	NodeFound   bool         `json:"nodeFound,omitempty"`
+	FFmpegFound bool         `json:"ffmpegFound,omitempty"`
+	Started     bool         `json:"started,omitempty"`
+	PID         int          `json:"pid,omitempty"`
+	LogPath     string       `json:"logPath,omitempty"`
+	Mode        string       `json:"mode,omitempty"`
+	Job         *downloadJob `json:"job,omitempty"`
 }
 
+type downloadJob struct {
+	ID          string  `json:"id"`
+	State       string  `json:"state"`
+	Mode        string  `json:"mode"`
+	URL         string  `json:"url"`
+	Progress    float64 `json:"progress"`
+	PID         int     `json:"pid,omitempty"`
+	DownloadDir string  `json:"downloadDir"`
+	LogPath     string  `json:"logPath"`
+	FilePath    string  `json:"filePath,omitempty"`
+	Error       string  `json:"error,omitempty"`
+	CreatedAt   string  `json:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt"`
+}
+
+var downloadProgressPattern = regexp.MustCompile(`\[download\]\s+([0-9]+(?:\.[0-9]+)?)%`)
+
+const completedFilePrefix = "__SNAPTUDO_FILE__:"
+
 func main() {
+	if len(os.Args) >= 3 && os.Args[1] == "--run-job" {
+		runJobFile(os.Args[2])
+		return
+	}
+
 	req, err := readRequest(os.Stdin)
 	if err != nil {
 		_ = writeResponse(os.Stdout, response{Success: false, Error: err.Error()})
@@ -67,6 +96,10 @@ func main() {
 		result = ping(cfg)
 	case "startDownload":
 		result = startDownload(cfg, installDir, req)
+	case "getDownloadStatus":
+		result = getDownloadStatus(installDir, req.JobID)
+	case "openDownloadDir":
+		result = openDownloadDir(cfg)
 	default:
 		result = response{Success: false, Error: "Ação não permitida."}
 	}
@@ -173,27 +206,58 @@ func startDownload(cfg config, installDir string, req request) response {
 	if err := os.MkdirAll(logsDir, 0o755); err != nil {
 		return response{Success: false, Error: "Não foi possível criar a pasta de logs: " + err.Error()}
 	}
-	logPath := filepath.Join(logsDir, fmt.Sprintf("download-%s-%s.log", mode, time.Now().Format("20060102-150405")))
-	logFile, err := os.Create(logPath)
-	if err != nil {
-		return response{Success: false, Error: "Não foi possível criar o log: " + err.Error()}
+	jobsDir := filepath.Join(installDir, "jobs")
+	if err := os.MkdirAll(jobsDir, 0o755); err != nil {
+		return response{Success: false, Error: "Não foi possível criar a pasta de trabalhos: " + err.Error()}
 	}
 
-	args, ffmpegFound := buildYtDlpArgs(cfg, mode, req.URL)
-	cmd := exec.Command(cfg.YtDlpPath, args...)
+	jobID := fmt.Sprintf("%s-%d", time.Now().Format("20060102-150405.000"), os.Getpid())
+	jobID = strings.ReplaceAll(jobID, ".", "-")
+	logPath := filepath.Join(logsDir, fmt.Sprintf("download-%s-%s.log", mode, jobID))
+	jobPath := filepath.Join(jobsDir, jobID+".json")
+	now := time.Now().Format(time.RFC3339)
+	job := downloadJob{
+		ID:          jobID,
+		State:       "queued",
+		Mode:        mode,
+		URL:         req.URL,
+		DownloadDir: cfg.DownloadDir,
+		LogPath:     logPath,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	if err := writeJob(jobPath, &job); err != nil {
+		return response{Success: false, Error: "Não foi possível salvar o estado do download: " + err.Error()}
+	}
+	if err := os.WriteFile(filepath.Join(jobsDir, "latest.txt"), []byte(jobID), 0o644); err != nil {
+		return response{Success: false, Error: "Não foi possível marcar o download atual: " + err.Error()}
+	}
+	job.State = "starting"
+	job.UpdatedAt = time.Now().Format(time.RFC3339)
+	if err := writeJob(jobPath, &job); err != nil {
+		return response{Success: false, Error: "Não foi possível preparar o estado do download: " + err.Error()}
+	}
+
+	executable, err := os.Executable()
+	if err != nil {
+		return response{Success: false, Error: "Não foi possível localizar o sidecar: " + err.Error()}
+	}
+	cmd := exec.Command(executable, "--run-job", jobPath)
 	cmd.Dir = installDir
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
 	if runtime.GOOS == "windows" {
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000200}
 	}
 	if err := cmd.Start(); err != nil {
-		_ = logFile.Close()
-		return response{Success: false, Error: "Falha ao iniciar yt-dlp: " + err.Error()}
+		job.State = "failed"
+		job.Error = "Falha ao iniciar o monitor do download: " + err.Error()
+		job.UpdatedAt = time.Now().Format(time.RFC3339)
+		_ = writeJob(jobPath, &job)
+		return response{Success: false, Error: job.Error, Job: &job}
 	}
 	pid := cmd.Process.Pid
+	job.PID = pid
 	_ = cmd.Process.Release()
-	_ = logFile.Close()
+	_, ffmpegFound := buildYtDlpArgs(cfg, mode, req.URL)
 
 	result := response{
 		Success:     true,
@@ -203,11 +267,176 @@ func startDownload(cfg config, installDir string, req request) response {
 		DownloadDir: cfg.DownloadDir,
 		LogPath:     logPath,
 		FFmpegFound: ffmpegFound,
+		Job:         &job,
 	}
 	if mode == "video" && !ffmpegFound {
 		result.Error = "FFmpeg não foi encontrado; o yt-dlp tentará um formato já combinado de até 720p."
 	}
 	return result
+}
+
+func runJobFile(jobPath string) {
+	job, err := readJob(jobPath)
+	if err != nil {
+		return
+	}
+	cfg, installDir, err := loadConfig()
+	if err != nil {
+		job.State = "failed"
+		job.Error = err.Error()
+		job.UpdatedAt = time.Now().Format(time.RFC3339)
+		_ = writeJob(jobPath, &job)
+		return
+	}
+
+	logFile, err := os.OpenFile(job.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		job.State = "failed"
+		job.Error = "Não foi possível abrir o log: " + err.Error()
+		job.UpdatedAt = time.Now().Format(time.RFC3339)
+		_ = writeJob(jobPath, &job)
+		return
+	}
+	defer logFile.Close()
+
+	args, _ := buildYtDlpArgs(cfg, job.Mode, job.URL)
+	cmd := exec.Command(cfg.YtDlpPath, args...)
+	cmd.Dir = installDir
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		markJobFailed(jobPath, &job, "Não foi possível capturar a saída do yt-dlp: "+err.Error())
+		return
+	}
+	cmd.Stderr = cmd.Stdout
+	if runtime.GOOS == "windows" {
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000200}
+	}
+	if err := cmd.Start(); err != nil {
+		markJobFailed(jobPath, &job, "Falha ao iniciar yt-dlp: "+err.Error())
+		return
+	}
+
+	job.State = "downloading"
+	job.PID = cmd.Process.Pid
+	job.UpdatedAt = time.Now().Format(time.RFC3339)
+	_ = writeJob(jobPath, &job)
+
+	scanner := bufio.NewScanner(stdout)
+	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+	lastPersist := time.Now()
+	lastLine := ""
+	for scanner.Scan() {
+		line := scanner.Text()
+		lastLine = line
+		_, _ = fmt.Fprintln(logFile, line)
+
+		changed := false
+		if match := downloadProgressPattern.FindStringSubmatch(line); len(match) == 2 {
+			if progress, parseErr := strconv.ParseFloat(match[1], 64); parseErr == nil && progress >= job.Progress {
+				if progress-job.Progress >= 0.5 {
+					changed = true
+				}
+				job.Progress = progress
+				job.State = "downloading"
+			}
+		}
+		if strings.Contains(line, "[Merger]") || strings.Contains(line, "[ExtractAudio]") || strings.Contains(line, "[VideoRemuxer]") {
+			job.State = "processing"
+			changed = true
+		}
+		if strings.HasPrefix(line, completedFilePrefix) {
+			job.FilePath = strings.TrimSpace(strings.TrimPrefix(line, completedFilePrefix))
+			changed = true
+		}
+		if changed || time.Since(lastPersist) >= time.Second {
+			job.UpdatedAt = time.Now().Format(time.RFC3339)
+			_ = writeJob(jobPath, &job)
+			lastPersist = time.Now()
+		}
+	}
+
+	waitErr := cmd.Wait()
+	if waitErr != nil {
+		detail := strings.TrimSpace(lastLine)
+		if detail == "" {
+			detail = waitErr.Error()
+		}
+		markJobFailed(jobPath, &job, compactOutput([]byte(detail), waitErr))
+		return
+	}
+	if scanErr := scanner.Err(); scanErr != nil {
+		markJobFailed(jobPath, &job, "Falha ao ler o progresso: "+scanErr.Error())
+		return
+	}
+
+	job.State = "completed"
+	job.Progress = 100
+	job.Error = ""
+	job.UpdatedAt = time.Now().Format(time.RFC3339)
+	_ = writeJob(jobPath, &job)
+}
+
+func getDownloadStatus(installDir, requestedID string) response {
+	jobsDir := filepath.Join(installDir, "jobs")
+	jobID := strings.TrimSpace(requestedID)
+	if jobID == "" {
+		content, err := os.ReadFile(filepath.Join(jobsDir, "latest.txt"))
+		if errors.Is(err, os.ErrNotExist) {
+			return response{Success: true}
+		}
+		if err != nil {
+			return response{Success: false, Error: "Não foi possível ler o download atual: " + err.Error()}
+		}
+		jobID = strings.TrimSpace(string(content))
+	}
+	if jobID == "" || filepath.Base(jobID) != jobID || strings.ContainsAny(jobID, `/\`) {
+		return response{Success: false, Error: "Identificador de download inválido."}
+	}
+	job, err := readJob(filepath.Join(jobsDir, jobID+".json"))
+	if err != nil {
+		return response{Success: false, Error: "Estado do download não encontrado: " + err.Error()}
+	}
+	return response{Success: true, Job: &job, DownloadDir: job.DownloadDir, LogPath: job.LogPath, Mode: job.Mode, PID: job.PID}
+}
+
+func openDownloadDir(cfg config) response {
+	if err := os.MkdirAll(cfg.DownloadDir, 0o755); err != nil {
+		return response{Success: false, Error: "Não foi possível abrir a pasta: " + err.Error()}
+	}
+	if runtime.GOOS != "windows" {
+		return response{Success: false, Error: "Abrir pasta está disponível apenas no Windows."}
+	}
+	if err := exec.Command("explorer.exe", cfg.DownloadDir).Start(); err != nil {
+		return response{Success: false, Error: "Não foi possível abrir a pasta: " + err.Error()}
+	}
+	return response{Success: true, DownloadDir: cfg.DownloadDir}
+}
+
+func readJob(path string) (downloadJob, error) {
+	var job downloadJob
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return job, err
+	}
+	if err := json.Unmarshal(content, &job); err != nil {
+		return job, err
+	}
+	return job, nil
+}
+
+func writeJob(path string, job *downloadJob) error {
+	content, err := json.MarshalIndent(job, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, content, 0o644)
+}
+
+func markJobFailed(path string, job *downloadJob, message string) {
+	job.State = "failed"
+	job.Error = message
+	job.UpdatedAt = time.Now().Format(time.RFC3339)
+	_ = writeJob(path, job)
 }
 
 func buildYtDlpArgs(cfg config, mode, rawURL string) ([]string, bool) {
@@ -220,6 +449,7 @@ func buildYtDlpArgs(cfg config, mode, rawURL string) ([]string, bool) {
 		"--paths", cfg.DownloadDir,
 		"--output", "%(title).180B [%(id)s].%(ext)s",
 	}
+	args = append(args, "--print", "after_move:"+completedFilePrefix+"%(filepath)s")
 
 	if nodePath, ok := resolveTool(cfg.NodePath, "node.exe"); ok {
 		args = append(args, "--js-runtimes", "node:"+nodePath)

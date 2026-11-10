@@ -45,8 +45,8 @@ Uma extensão carregada sem compactação não tem permissão para reescrever a 
 1. Altere `version` em `manifest.json`.
 2. Atualize e teste as receitas, se necessário.
 3. Execute `./scripts/verify.ps1`.
-4. Crie e envie uma tag igual à versão, por exemplo: `git tag v1.2.2` e `git push origin v1.2.2`.
-5. O workflow gera `snaptudo-v1.2.2.zip` e `snaptudo-sidecar-v1.2.2-win-x64.zip`, publica os SHA-256 e cria a Release.
+4. Crie e envie uma tag igual à versão, por exemplo: `git tag v1.2.3` e `git push origin v1.2.3`.
+5. O workflow gera `snaptudo-v1.2.3.zip` e `snaptudo-sidecar-v1.2.3-win-x64.zip`, publica os SHA-256 e cria a Release.
 
 O endpoint público consultado pela extensão é a API de `releases/latest` deste repositório. Releases marcadas como rascunho ou pré-lançamento não entram no canal estável.
 

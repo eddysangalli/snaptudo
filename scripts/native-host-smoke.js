@@ -6,12 +6,14 @@ const path = require("node:path");
 const executable = process.argv[2];
 const action = process.argv[3] || "ping";
 if (!executable) {
-  console.error("Uso: node scripts/native-host-smoke.js <sidecar.exe> [ping|startDownload] [video|audio] [url]");
+  console.error("Uso: node scripts/native-host-smoke.js <sidecar.exe> [ping|startDownload|getDownloadStatus] [modo|jobId] [url]");
   process.exit(2);
 }
 
 const message = action === "startDownload"
   ? { action, mode: process.argv[4] || "video", url: process.argv[5] }
+  : action === "getDownloadStatus"
+    ? { action, jobId: process.argv[4] || "" }
   : { action };
 const payload = Buffer.from(JSON.stringify(message), "utf8");
 const header = Buffer.alloc(4);

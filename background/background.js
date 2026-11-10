@@ -7,6 +7,8 @@
 importScripts("updater.js");
 
 const SNAPTUDO_YTDLP_HOST = "com.eddysangalli.snaptudo";
+const YTDLP_JOB_STORAGE_KEY = "snaptudoYtDlpJob";
+const YTDLP_MONITOR_ALARM = "snaptudo-ytdlp-monitor";
 
 // Armazena mídias capturadas via rede por tabId
 const tabMediaStreams = new Map();
@@ -173,6 +175,85 @@ function isAllowedYouTubeUrl(rawUrl) {
   }
 }
 
+function isYtDlpJobActive(job) {
+  return ["queued", "starting", "downloading", "processing"].includes(job?.state);
+}
+
+function setYtDlpBadge(job, tabId) {
+  let text = "";
+  let color = "#71717a";
+  let title = "SnapTudo - Baixador de Mídias";
+
+  if (job?.state === "completed") {
+    text = "✓";
+    color = "#22c55e";
+    title = "SnapTudo: download concluído";
+  } else if (job?.state === "failed") {
+    text = "!";
+    color = "#ef4444";
+    title = `SnapTudo: download falhou${job.error ? ` — ${job.error}` : ""}`;
+  } else if (job?.state === "processing") {
+    text = "…";
+    color = "#f59e0b";
+    title = "SnapTudo: finalizando vídeo e áudio";
+  } else if (isYtDlpJobActive(job)) {
+    const progress = Number(job.progress || 0);
+    text = progress >= 1 ? String(Math.min(99, Math.round(progress))) : "↓";
+    color = "#3b82f6";
+    title = progress >= 1 ? `SnapTudo: baixando ${progress.toFixed(1)}%` : "SnapTudo: iniciando download";
+  }
+
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color });
+  chrome.action.setTitle({ title });
+  if (Number.isInteger(tabId) && tabId >= 0) {
+    chrome.action.setBadgeText({ tabId, text });
+    chrome.action.setBadgeBackgroundColor({ tabId, color });
+    chrome.action.setTitle({ tabId, title });
+  }
+}
+
+function scheduleYtDlpMonitor(delayMs = 3000) {
+  chrome.alarms.create(YTDLP_MONITOR_ALARM, { when: Date.now() + Math.max(1000, delayMs) });
+}
+
+function queryYtDlpJob(jobId, callback) {
+  chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, {
+    action: "getDownloadStatus",
+    jobId: jobId || ""
+  }, (response) => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      callback({ success: false, error: error.message || "Falha ao consultar o sidecar." });
+      return;
+    }
+    callback(response || { success: false, error: "O sidecar não respondeu." });
+  });
+}
+
+function persistYtDlpJob(job, tabId) {
+  if (!job) return;
+  const value = { job, tabId: Number.isInteger(tabId) ? tabId : null };
+  chrome.storage.local.set({ [YTDLP_JOB_STORAGE_KEY]: value });
+  setYtDlpBadge(job, value.tabId);
+  if (isYtDlpJobActive(job)) scheduleYtDlpMonitor();
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== YTDLP_MONITOR_ALARM) return;
+  chrome.storage.local.get(YTDLP_JOB_STORAGE_KEY, (stored) => {
+    const current = stored?.[YTDLP_JOB_STORAGE_KEY];
+    if (!current?.job?.id || !isYtDlpJobActive(current.job)) return;
+    queryYtDlpJob(current.job.id, (response) => {
+      if (response?.success && response.job) {
+        persistYtDlpJob(response.job, current.tabId);
+      } else {
+        scheduleYtDlpMonitor(5000);
+      }
+    });
+  });
+});
+
 // Listener de mensagens
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { action } = message;
@@ -235,6 +316,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sidecarMissing: true,
           error: `Falha do Chrome ao abrir o sidecar: ${error.message || "erro desconhecido"}`
         });
+        return;
+      }
+      const result = response || { success: false, error: "O sidecar não respondeu." };
+      if (result.success && result.job) {
+        persistYtDlpJob(result.job, Number.isInteger(message.tabId) ? message.tabId : null);
+      }
+      sendResponse(result);
+    });
+    return true;
+  }
+
+  if (action === "getYtDlpDownloadStatus") {
+    chrome.storage.local.get(YTDLP_JOB_STORAGE_KEY, (stored) => {
+      const current = stored?.[YTDLP_JOB_STORAGE_KEY];
+      const jobId = message.jobId || current?.job?.id || "";
+      queryYtDlpJob(jobId, (response) => {
+        if (response?.success && response.job) {
+          persistYtDlpJob(response.job, current?.tabId);
+          sendResponse(response);
+          return;
+        }
+        if (current?.job) {
+          sendResponse({ success: true, job: current.job, stale: true, error: response?.error });
+          return;
+        }
+        sendResponse(response);
+      });
+    });
+    return true;
+  }
+
+  if (action === "openYtDlpDownloadDir") {
+    chrome.runtime.sendNativeMessage(SNAPTUDO_YTDLP_HOST, { action: "openDownloadDir" }, (response) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        sendResponse({ success: false, error: error.message || "Falha ao abrir a pasta." });
         return;
       }
       sendResponse(response || { success: false, error: "O sidecar não respondeu." });

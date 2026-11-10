@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -38,7 +39,30 @@ func TestBuildArgsAreBoundedAndNoPlaylist(t *testing.T) {
 			t.Fatalf("argumento esperado ausente: %s em %s", expected, joined)
 		}
 	}
+	if !strings.Contains(joined, completedFilePrefix) {
+		t.Fatalf("marcador do arquivo concluído ausente em %s", joined)
+	}
 	if !strings.Contains(joined, "height<=720") && !strings.Contains(joined, "height<=1080") {
 		t.Fatalf("limite de resolução ausente em %s", joined)
+	}
+}
+
+func TestProgressAndJobPersistence(t *testing.T) {
+	match := downloadProgressPattern.FindStringSubmatch("[download]  42.7% of 10.00MiB")
+	if len(match) != 2 || match[1] != "42.7" {
+		t.Fatalf("progresso não reconhecido: %#v", match)
+	}
+
+	path := filepath.Join(t.TempDir(), "job.json")
+	want := downloadJob{ID: "job-1", State: "downloading", Progress: 42.7, DownloadDir: `C:\Downloads\SnapTudo`}
+	if err := writeJob(path, &want); err != nil {
+		t.Fatalf("falha ao salvar job: %v", err)
+	}
+	got, err := readJob(path)
+	if err != nil {
+		t.Fatalf("falha ao ler job: %v", err)
+	}
+	if got.ID != want.ID || got.State != want.State || got.Progress != want.Progress {
+		t.Fatalf("job divergente: got=%+v want=%+v", got, want)
 	}
 }
